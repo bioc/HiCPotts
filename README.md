@@ -7,6 +7,21 @@
 
 ---
 
+## Development version
+
+A newer development version of HiCPotts is available through Bioconductor devel.
+
+Users who require the latest features and updates can install the development version by first switching to Bioconductor devel:
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install(version = "devel")
+BiocManager::install("HiCPotts")
+
+---
+
 ## 1  Why HiCPotts?
 
 Hi‑C interaction counts are  

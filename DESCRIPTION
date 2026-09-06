@@ -2,7 +2,7 @@ Package: HiCPotts
 Type: Package
 Title: HiCPotts: Hierarchical Modeling to Identify and Correct Genomic
         Biases in Hi-C
-Version: 1.2.0
+Version: 1.2.1
 Authors@R: c(person(given = "Itunu. Godwin", family = "Osuntoki", email = "hitunes4@gmail.com", role = c("aut", "cre"), 
            comment = c(ORCID = "0009-0005-1037-9346")),
            person(given = "Nicolae. Radu", family = "Zabet", email = "r.zabet@qmul.ac.uk", role = "aut"))
