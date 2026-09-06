@@ -33,11 +33,36 @@ test_that("run_metropolis_MCMC_betas executes without errors and returns valid o
 
   # Validate output structure
   expect_type(result, "list")
-  expect_named(result, c("chains", "gamma", "theta", "size"))
+  expect_named(result, c("chains", "gamma", "theta", "size", "z_final",
+    "z_checkpoints", "z_probabilities", "z_probability_draws",
+    "z_probability_burnin", "beta_mixing", "branch_mixing",
+    "signal_block_mixing",
+    "dispersion_mixing",
+    "comp23_barrier", "noise_relationship", "regression_prior",
+    "dispersion_prior", "pair_weighting",
+    "z_probability_batches", "performance", "sampler_settings"))
   expect_type(result$chains, "list")
   expect_type(result$gamma, "double")
   expect_type(result$theta, "double")
   expect_type(result$size, "double")
+  expect_equal(result$comp23_barrier$kappa, 10)
+  expect_equal(result$branch_mixing$interval, 1L)
+  expect_true(result$branch_mixing$joint_proposal)
+  expect_identical(result$regression_prior$method,
+                   "soft_allocation_empirical_Bayes_warmup_frozen")
+  expect_true(result$regression_prior$fixed_for_retained_draws)
+  expect_false(result$regression_prior$reestimated_each_iteration)
+  expect_identical(result$dispersion_prior$family, "Gamma")
+  expect_equal(result$dispersion_prior$shape, c(3, 2, 2))
+  expect_equal(result$dispersion_prior$rate, c(1, 0.2, 0.2))
+  expect_named(result$dispersion_mixing$acceptance_rate,
+               paste0("component", 1:3))
+  expect_named(result$beta_mixing$retained_acceptance_rate,
+               paste0("component", 1:3))
+  expect_identical(result$beta_mixing$proposal,
+                   "adaptive-scale QR-whitened random walk")
+  expect_equal(attr(result$gamma, "gamma_update_interval"), 5L)
+  expect_equal(result$pair_weighting$offdiagonal_weight, 1)
 })
 
 test_that("Neighbours_combined calculates neighbors correctly", {

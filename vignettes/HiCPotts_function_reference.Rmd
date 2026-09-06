@@ -1,0 +1,1491 @@
+---
+title: "HiCPotts Function and Argument Reference"
+author: "Itunu Godwin Osuntoki, Nicolae Radu Zabet"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{HiCPotts Function and Argument Reference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    eval = TRUE,
+    echo = TRUE,
+    collapse = TRUE,
+    comment = "#>"
+)
+library(HiCPotts)
+```
+
+# Purpose and scope
+
+This vignette documents the complete exported HiCPotts interface. For every
+function it describes the accepted inputs, every formal argument, the returned
+object, the main internal processing stages, and its relationship to other
+HiCPotts functions. The small worked examples run when this vignette is built.
+Their short chains demonstrate the interface and diagnostic output. The
+complete production template at the end uses longer chains and is not run
+during the build.
+
+HiCPotts also contains private validation, calibration, simulation and MCMC
+helpers. Those helpers are implementation details and are deliberately not
+exported. Users should call the public functions documented here; the
+"Internal processing" paragraphs explain the work performed by the private
+helpers without making them part of the supported user API.
+
+The main workflow is:
+
+~~~text
+get_data() -> process_data() -> run_chain_betas()
+                                    |
+                                    +-> classify_hicpotts()
+                                    +-> diagnose_hicpotts_fit()
+                                    +-> allocation_diagnostics()
+                                    +-> summarise_hicpotts_parameters()
+                                    +-> posterior_predictive_hicpotts()
+                                    +-> plot_hicpotts_mcmc_by_component()
+
+classify_hicpotts() or compute_HMRFHiC_probabilities()
+                                    |
+                                    +-> summarise_hicpotts_probabilities()
+                                    +-> plot_upper_prob_lower_count()
+
+independently fitted blocks -> combine_hicpotts_blocks() -> same summaries
+~~~
+
+## Function-selection guide
+
+**`get_data()`**
+
+Read a `.cool` or supported HDF5 contact map and construct annotated bin
+pairs.
+
+**`process_data()`**
+
+Validate long-format counts and reshape them into response and covariate
+matrices.
+
+**`run_chain_betas()`**
+
+Fit one or more matrices with independently seeded HiCPotts chains.
+
+**`relabel_hicpotts()`**
+
+Apply the biological component-2/3 orientation to an existing fit.
+
+**`classify_hicpotts()`**
+
+Produce the official three-state classification from sampled latent states.
+
+**`compute_HMRFHiC_probabilities()`**
+
+Perform a secondary parameter-plus-Potts probability sensitivity analysis.
+
+**`summarise_hicpotts_probabilities()`**
+
+Summarise component probabilities and optional hard calls.
+
+**`diagnose_hicpotts_fit()`**
+
+Calculate parameter, mixing, occupancy and reliability diagnostics.
+
+**`allocation_diagnostics()`**
+
+Measure Monte Carlo precision of per-cell membership probabilities.
+
+**`summarise_hicpotts_parameters()`**
+
+Return parameter summaries subject to reliability checks.
+
+**`posterior_predictive_hicpotts()`**
+
+Compare observed map features with posterior replicated maps.
+
+**`plot_hicpotts_mcmc_by_component()`**
+
+Plot component and global MCMC traces.
+
+**`plot_upper_prob_lower_count()`**
+
+Plot upper-triangle probabilities and lower-triangle counts.
+
+**`combine_hicpotts_blocks()`**
+
+Preserve independently fitted map blocks in one block-aware object.
+
+
+# Data input and preparation
+
+## `get_data()`
+
+### Purpose and signature
+
+`get_data()` reads an HDF5-backed contact map, extracts a genomic interval,
+rebins contacts to the requested resolution, and returns a complete long-format
+bin-pair grid with optional genomic annotations.
+
+~~~text
+get_data(
+    file_path, chr, start, end, resolution,
+    genome_package = NULL,
+    acc_wig = NULL, chain_file = NULL,
+    te_granges = NULL
+)
+~~~
+
+### Arguments
+
+**`file_path`**
+
+Path to a `.cool` file or supported `.h5` schema. Binary `.hic` is not HDF5
+and is rejected; convert it to `.cool` or extract counts with
+`strawr::straw()`. For `.mcool`, select/export the required resolution as
+`.cool`.
+
+**`chr`**
+
+Chromosome name exactly as represented by the input and annotations, for
+example `"chr4"`.
+
+**`start`**
+
+One-based start coordinate of the requested genomic interval.
+
+**`end`**
+
+End coordinate of the requested interval. It must be greater than or equal
+to `start`.
+
+**`resolution`**
+
+Positive target bin width in base pairs. Native bins are merged or sliced to
+construct the requested grid.
+
+**`genome_package`**
+
+Optional installed BSgenome package name used to calculate GC content. With
+`NULL`, GC is returned as `NA`.
+
+**`acc_wig`**
+
+Optional accessibility bedGraph/wig path. Accessibility is imported only
+when `chain_file` is also supplied.
+
+**`chain_file`**
+
+Optional liftOver chain used to map the accessibility track into the
+contact-map genome.
+
+**`te_granges`**
+
+Optional TE annotation path readable by `rtracklayer::import()` or an
+existing `GRanges` object.
+
+
+### Internal processing
+
+The function checks required packages, rejects unsupported `.hic` input,
+dispatches between supported Cooler and interval/matrix HDF5 schemas, filters
+both contact ends to the requested chromosome and interval, mirrors an
+upper-triangle Cooler representation, rebins counts, creates every bin pair,
+and fills unobserved pairs with zero counts. When the optional resources are
+available it then calculates combined-bin GC, mean accessibility, and summed
+TE overlaps.
+
+The returned data frame contains `start`, `end.i.`, `start.j.`, `end`, `chrom`,
+`GC`, `ACC`, `TES`, and `interactions`. Coordinate columns describe both ends
+of each pair; `interactions` contains non-negative observed counts.
+
+### Example
+
+```{r get-data-example}
+cool_file <- system.file(
+    "extdata", "BG3_WT_merged_hic_matrix_chr4_100Kb.cool",
+    package = "HiCPotts"
+)
+
+imported_contacts <- get_data(
+    file_path = cool_file,
+    chr = "chr4",
+    start = 1L,
+    end = 500000L,
+    resolution = 100000L,
+    genome_package = NULL
+)
+
+head(imported_contacts)
+```
+
+## `process_data()`
+
+### Purpose and signature
+
+`process_data()` validates a long-format interaction table and reshapes counts
+and covariates into one or more square matrices accepted by
+`run_chain_betas()`.
+
+~~~text
+process_data(
+    data, N, scale_max = NA_real_,
+    standardization_y = FALSE,
+    pad_with_zero = FALSE,
+    mirror = FALSE
+)
+~~~
+
+### Arguments
+
+**`data`**
+
+Data frame containing `start`, `end`, `interactions`, `GC`, `TES`, and
+`ACC`. `start.j.` is used for the second-bin start when present. Missing
+values are rejected.
+
+**`N`**
+
+Positive integer number of rows and columns in each output matrix. Full
+blocks contain `N^2` rows.
+
+**`scale_max`**
+
+Upper scaling value used only when `standardization_y = TRUE`.
+
+**`standardization_y`**
+
+If `FALSE`, preserve raw counts. If `TRUE`, min-max scale and round them.
+Raw non-negative integer counts are required for the package's Poisson/NB
+likelihoods, so `FALSE` is recommended for inference.
+
+**`pad_with_zero`**
+
+If `TRUE`, append zeros to an incomplete final block. This creates
+unobserved zero cells and should be used only when that scientific
+assumption is justified.
+
+**`mirror`**
+
+If `TRUE`, interpret input as one complete triangle and reconstruct the
+opposite triangle. Use this for triangular symmetric Hi-C input, not for
+intentionally ordered/asymmetric data.
+
+
+### Internal processing and return value
+
+The function checks columns, missingness, count validity and block dimensions.
+It optionally mirrors triangular input or pads an incomplete block, calculates
+distance as `abs(start.j. - start)` when `start.j.` exists (otherwise the legacy
+`abs(end - start)` definition), and reshapes values in the package's
+column-major order.
+
+It returns:
+
+* `x_vars`: a named list with `distance`, `GC`, `TES`, and `ACC`; each entry is
+    a list of `N` by `N` matrices;
+* `y`: a list of matching `N` by `N` count matrices.
+
+### Examples
+
+```{r process-data-examples}
+# A small reproducible symmetric dataset with simulated annotations.
+set.seed(4921)
+bins <- seq.int(1L, by = 100000L, length.out = 5L)
+hic <- expand.grid(start = bins, start.j. = bins)
+hic$end.i. <- hic$start + 99999L
+hic$end <- hic$start.j. + 99999L
+hic$chrom <- "chr4"
+symmetric_values <- function(values) {
+    mat <- matrix(values, 5L, 5L)
+    mat[lower.tri(mat)] <- t(mat)[lower.tri(mat)]
+    as.vector(mat)
+}
+hic$GC <- symmetric_values(runif(25L, 0.3, 0.7))
+hic$ACC <- symmetric_values(runif(25L))
+hic$TES <- symmetric_values(rpois(25L, 2))
+hic$interactions <- symmetric_values(rpois(25L, 8))
+
+processed <- process_data(
+    hic,
+    N = length(unique(hic$start)),
+    standardization_y = FALSE,
+    mirror = FALSE
+)
+
+# One triangle of the same matrix gives the same processed counts.
+triangular <- hic[hic$start <= hic$start.j., ]
+processed_triangular <- process_data(
+    triangular,
+    N = 5L,
+    standardization_y = FALSE,
+    mirror = TRUE
+)
+
+y_matrix <- processed$y[[1L]]
+x_matrices <- lapply(processed$x_vars, function(x) x[[1L]])
+stopifnot(identical(y_matrix, processed_triangular$y[[1L]]))
+```
+
+# Model fitting
+
+## `run_chain_betas()`
+
+### Purpose and signature
+
+`run_chain_betas()` is the only exported fitting entry point. It validates the
+data contract, prepares priors and a shared ABC tolerance, constructs
+independently seeded starting allocations, runs the native sampler, optionally
+relabels the components, and returns either raw chains or the robust diagnostic
+workflow.
+
+~~~text
+run_chain_betas(
+    N, x_vars, y, dist = "ZIP", gamma_start = 0.3,
+    iterations = 20000L, burnin = NULL, n_chains = 1L,
+    seeds = NULL, robust = FALSE, initialization = "auto",
+    theta_start = NULL, size_start = NULL,
+    use_data_priors = TRUE, user_fixed_priors = NULL,
+    gamma_prior_shape = c(1, 1), epsilon = NULL,
+    abc_potts_sweeps = 0L, abc_sim_reps = 4L,
+    distance_metric = "manhattan", relabel = TRUE,
+    mc_cores = 1L, verbose = FALSE, progress_interval = 50L,
+    slope_sd_standardized = 0.5,
+    abc_epsilon_quantile = 0.10,
+    gamma_update_interval = 5L,
+    z_probability_burnin = NULL,
+    mcse_stop = TRUE, mcse_min_iterations = 10000L,
+    mcse_check_interval = 500L,
+    mcse_relative_threshold = 0.05,
+    diagnostic_control = list(), gamma_prior = NULL
+)
+~~~
+
+### Data, model and chain arguments
+
+**`N`**
+
+Dimension shared by every square response and covariate matrix.
+
+**`x_vars`**
+
+Named list containing `distance`, `GC`, `TES`, and `ACC`. For one dataset
+entries may be matrices; for several datasets each entry is a list matching
+`y`.
+
+**`y`**
+
+One non-negative integer count matrix, or a list of matrices fitted
+independently.
+
+**`dist`**
+
+Count family: `"Poisson"`, `"NB"`, `"ZIP"`, or `"ZINB"`.
+
+**`gamma_start`**
+
+Initial Potts spatial-coupling value strictly between zero and one. It is
+not the gamma prior.
+
+**`iterations`**
+
+Positive maximum number of production MCMC updates per chain. It is exact
+when `mcse_stop = FALSE`.
+
+**`burnin`**
+
+Initial production iterations excluded by robust diagnostics. `NULL` uses
+half of `iterations`, capped at 5,000.
+
+**`n_chains`**
+
+Number of independent chains per dataset. Four or more are recommended for
+convergence assessment.
+
+**`seeds`**
+
+Integer seed per chain. If omitted, `seq_len(n_chains)` is used; if
+`n_chains` is omitted, seed-vector length determines it.
+
+**`robust`**
+
+`TRUE` returns a mode-screened `hicpotts_robust_fit` with diagnostics.
+`FALSE` returns the raw fitted chains.
+
+**`initialization`**
+
+`"auto"`, or one method per chain from `"likelihood_informed"`,
+`"count_quantile"`, `"distance_adjusted"`, `"noise_anchored_random"`, and
+`"random"`.
+
+**`theta_start`**
+
+Starting zero-inflation probability for ZIP and ZINB. Omit for Poisson and
+NB.
+
+**`size_start`**
+
+Positive length-three NB2 dispersion starting vector for NB and ZINB. Omit
+for Poisson and ZIP.
+
+
+### Prior and ABC arguments
+
+**`use_data_priors`**
+
+With `robust = TRUE`, run a separate multi-chain empirical-Bayes pilot, pool
+one prior, and freeze it for production. With `FALSE`, use
+`user_fixed_priors` or robust automatically constructed scaled priors.
+
+**`user_fixed_priors`**
+
+Named `component1`/`component2`/`component3` list used when `use_data_priors
+= FALSE`. Each component supplies `meany`, `meanx1:meanx4`, `sdy`, and
+`sdx1:sdx4`. No empirical-Bayes pilot is needed.
+
+**`gamma_prior_shape`**
+
+Positive length-two vector containing the Beta prior shapes for gamma. `c(1,
+1)` is uniform.
+
+**`epsilon`**
+
+Positive ABC kernel bandwidth. `NULL` performs one deterministic
+prior-predictive calibration shared by every chain of the dataset.
+
+**`abc_potts_sweeps`**
+
+Gibbs sweeps per auxiliary Potts field. Zero selects `max(100, 100 * N^2 /
+400)`. Reducing it speeds fitting but can under-equilibrate fields and bias
+gamma upward.
+
+**`abc_sim_reps`**
+
+Auxiliary fields averaged per gamma proposal. Cost is approximately linear
+in this value.
+
+**`abc_epsilon_quantile`**
+
+Quantile strictly between zero and one used during automatic ABC tolerance
+calibration.
+
+**`gamma_update_interval`**
+
+MCMC iterations between gamma proposals. Larger values are cheaper but
+provide fewer gamma transitions.
+
+**`slope_sd_standardized`**
+
+Standardized slope prior SD used only when the robust fixed-prior workflow
+constructs priors automatically. Reported coefficients remain on the
+original `log1p` covariate scale.
+
+
+### Execution, probability and diagnostic arguments
+
+**`distance_metric`**
+
+Compatibility argument retained for older code. It is ignored.
+
+**`relabel`**
+
+Apply the biological component-2/3 orientation before returning the fit.
+
+**`mc_cores`**
+
+Number of chains that may execute concurrently. Windows uses PSOCK workers;
+Unix-like systems use forked workers.
+
+**`verbose`**
+
+Print sampler progress.
+
+**`progress_interval`**
+
+Iterations between progress messages when `verbose = TRUE`.
+
+**`z_probability_burnin`**
+
+Iteration after which sampled latent states contribute to membership
+probabilities. `NULL` uses `burnin`.
+
+**`mcse_stop`**
+
+Permit early stopping when every monitored parameter satisfies the relative
+MCSE rule. Set `FALSE` for an exact iteration count.
+
+**`mcse_min_iterations`**
+
+Earliest iteration at which MCSE stopping can occur.
+
+**`mcse_check_interval`**
+
+Iterations between MCSE evaluations.
+
+**`mcse_relative_threshold`**
+
+Required maximum batch-means MCSE divided by posterior SD.
+
+**`diagnostic_control`**
+
+Named overrides for robust reliability and mode-screen thresholds; listed
+below. These affect reporting and selection, not the posterior target.
+
+**`gamma_prior`**
+
+Deprecated alias for `gamma_start`. Do not supply both.
+
+
+Recognised `diagnostic_control` entries are:
+
+**`minimum_component_cells`**
+
+Default: `0`. Minimum cells required in each component.
+
+**`minimum_ess`**
+
+Default: `200`. Minimum bulk and tail effective sample size.
+
+**`maximum_rhat`**
+
+Default: `1.01`. Maximum split-R-hat.
+
+**`gamma_boundary_tolerance`**
+
+Default: `0.01`. Distance from zero or one treated as a boundary.
+
+**`maximum_gamma_boundary_fraction`**
+
+Default: `0.95`. Largest permitted retained gamma fraction near a boundary.
+
+**`minimum_gamma_unique`**
+
+Default: `20`. Minimum distinct retained gamma values per chain.
+
+**`mode_agreement_threshold`**
+
+Default: `0.8`. Allocation agreement used when screening replicated modes.
+
+**`minimum_mode_chains`**
+
+Default: `2`. Minimum chains required to retain a replicated mode.
+
+
+### Internal processing and return value
+
+The function first standardizes one-dataset and multiple-dataset layouts. It
+validates counts, covariates and starting values, chooses the requested
+initialization for each seed, and calibrates one shared ABC tolerance when
+`epsilon = NULL`.
+
+With robust empirical-Bayes priors, a pilot of at most 5,000 iterations per
+chain estimates one shared regression-prior object; pilot draws never enter
+production summaries. With fixed user priors there is no prior-estimation
+pilot, but the same deterministic ABC calibration is still shared across all
+chains. Production chains therefore target the same posterior in either mode.
+
+For `robust = FALSE`, the return value is a list of raw fits. A raw fit includes
+component coefficient chains, gamma, family-dependent theta/size draws, final
+and checkpoint allocations, membership frequencies, batch summaries, sampler
+settings and performance information. For `robust = TRUE`, the
+`hicpotts_robust_fit` additionally contains `fits`, `all_fits`,
+`mode_selection`, `diagnostics`, `covariate_diagnostics`, `priors`,
+`empirical_bayes_pilot`, and `settings`.
+
+### Example
+
+```{r fit-example}
+fit <- run_chain_betas(
+    N = nrow(y_matrix),
+    x_vars = x_matrices,
+    y = y_matrix,
+    dist = "ZINB",
+    gamma_start = 0.3,
+    gamma_prior_shape = c(1, 1),
+    theta_start = 0.05,
+    size_start = rep(11, 3L),
+    iterations = 60L,
+    burnin = 20L,
+    n_chains = 2L,
+    seeds = c(101L, 202L),
+    robust = TRUE,
+    initialization = "auto",
+    use_data_priors = FALSE,
+    epsilon = 0.2,
+    abc_potts_sweeps = 10L,
+    abc_sim_reps = 1L,
+    mcse_stop = FALSE,
+    mc_cores = 1L,
+    verbose = FALSE
+)
+```
+
+The fixed seed, short chains and explicit ABC settings keep this example
+quick to rebuild. For a production analysis, use the longer template below
+and assess the diagnostic output for your dataset. Setting
+`use_data_priors = TRUE` enables the shared empirical-Bayes pilot.
+
+# Component orientation and probabilities
+
+## `relabel_hicpotts()`
+
+### Purpose, argument and return value
+
+~~~text
+relabel_hicpotts(x)
+~~~
+
+`x` is one raw HiCPotts fit or a list of raw fits. The function preserves
+component 1 as low-mean noise and makes one global component-2/3 orientation
+decision for each complete retained chain. Component 3 is the elevated
+component whose standardized covariate slopes most closely resemble component
+1 and whose intercept is above component 1; component 2 is the remaining
+unrestricted true-signal component.
+
+Internally it scores both possible component-2/3 branches, decides whether a
+global swap is needed, and applies the same permutation to coefficient chains,
+dispersion, allocations, checkpoints, membership probabilities, batch
+summaries and stored priors. The return value has the same outer structure as
+`x` and records the permutation, relationship probability and relabelling rule.
+`run_chain_betas(relabel = TRUE)` normally performs this step automatically.
+
+```{r relabel-example}
+oriented_chains <- relabel_hicpotts(fit$all_fits)
+oriented_chains[[1L]]$relabel_rule
+oriented_chains[[1L]]$noise_relationship_probability
+```
+
+## `classify_hicpotts()`
+
+### Purpose and signature
+
+This is the official classification function. It pools sampled post-burn-in
+latent-state frequencies; it does not refit, evaluate posterior-mean densities,
+or add new smoothing.
+
+~~~text
+classify_hicpotts(
+    fit, data = NULL,
+    component_names = hicpotts_component_definition()$label,
+    use = c("selected", "all"), relabel = TRUE,
+    min_draws = 100L,
+    reflect = c("auto", "always", "never")
+)
+~~~
+
+### Arguments
+
+**`fit`**
+
+Raw fit, list of chains, robust fit, or block-aware fit.
+
+**`data`**
+
+Optional original data frame in the same column-major cell order. When
+omitted, lattice indices are returned.
+
+**`component_names`**
+
+Three distinct output labels. Changing them changes wording only, not
+component identities.
+
+**`use`**
+
+For robust fits, pool mode-screened `"selected"` chains or `"all"` retained
+chains. Selected results are conditional on that replicated mode.
+
+**`relabel`**
+
+Apply biological chain orientation and cross-chain alignment before pooling.
+
+**`min_draws`**
+
+Minimum pooled post-burn-in allocation draws. Too few draws cause an error
+rather than a final-state fallback.
+
+**`reflect`**
+
+`"auto"` averages mirrored probabilities only when symmetric input is
+confirmed; `"always"` forces it and `"never"` disables it.
+
+
+### Internal processing and return value
+
+The function selects the requested robust chains, applies biological
+relabelling, aligns allocations, sums the stored membership frequencies, and
+optionally averages mirrored cells. It returns the original columns or lattice
+indices plus `prob1`, `prob2`, `prob3`, the MAP component and label, winning
+probability, probability margin, normalized entropy, and classification.
+Attributes record chains, draws, scope and reflection behavior.
+
+```{r classify-example}
+classification <- classify_hicpotts(
+    fit,
+    data = hic,
+    use = "selected",
+    min_draws = 5L,
+    reflect = "auto"
+)
+
+table(classification$classification)
+head(classification[c("prob1", "prob2", "prob3", "probability_margin")])
+```
+
+## `compute_HMRFHiC_probabilities()`
+
+### Purpose and signature
+
+This function is a secondary parameter-based sensitivity analysis. The
+official allocation remains `classify_hicpotts()`. The integrated method
+evaluates membership probabilities over retained posterior draws; the plug-in
+method evaluates one set of posterior-mean parameters.
+
+~~~text
+compute_HMRFHiC_probabilities(
+    data = NULL, chain_betas = NULL, iterations = NULL,
+    dist = "ZINB", max_interactions = NA_integer_,
+    consistent_dist = FALSE, relabel = FALSE,
+    N = NULL, potts_iterations = 5L,
+    method = c("integrated", "plugin"), n_draws = 200L,
+    component_definition = hicpotts_component_definition()
+)
+~~~
+
+### Arguments
+
+**`data`**
+
+Required long-format data frame with `start`, `end`, `interactions`, `GC`,
+`TES`, and `ACC`; may also be block data accepted by
+`combine_hicpotts_blocks()`.
+
+**`chain_betas`**
+
+Raw fit, chain list, robust fit, or block-aware fit.
+
+**`iterations`**
+
+Compatibility argument that must be a scalar of at least two. Retained
+indices are derived from each chain's actual stored length, so early-stopped
+chains are safe.
+
+**`dist`**
+
+Fitted family: Poisson, NB, ZIP, or ZINB. It must match the fit.
+
+**`max_interactions`**
+
+Optional integer cap applied to counts before density evaluation; `NA`
+applies no cap.
+
+**`consistent_dist`**
+
+`FALSE` matches the fitted model: zero inflation applies only to component
+1. `TRUE` applies the zero-inflated family to all components and is retained
+only for backwards comparison.
+
+**`relabel`**
+
+Orient chains before extracting parameters.
+
+**`N`**
+
+Optional lattice dimension. Supply it with `N^2 == nrow(data)` to include
+the mean-field Potts neighbour term. Without it, spatial-free probabilities
+are returned with a warning.
+
+**`potts_iterations`**
+
+Mean-field spatial smoothing sweeps when `N` is valid.
+
+**`method`**
+
+`"integrated"` averages normalized probabilities across draws; `"plugin"`
+evaluates posterior-mean parameters and understates uncertainty.
+
+**`n_draws`**
+
+Posterior draws used by `method = "integrated"`; runtime is approximately
+linear in this value.
+
+**`component_definition`**
+
+Three-row data frame with `component`, `label`, and `definition`. Custom
+values rename output only.
+
+
+### Internal processing and return value
+
+After validating and optionally relabelling the fits, the function transforms
+the four covariates with `log1p`, selects retained draws, evaluates the
+component-specific count densities, optionally iterates the mean-field Potts
+term over four-neighbour lattice adjacency, and normalizes each row. It returns
+the supplied data plus `prob1`, `prob2`, and `prob3`.
+
+```{r secondary-probability-example}
+parameter_probabilities <- compute_HMRFHiC_probabilities(
+    data = hic,
+    chain_betas = fit,
+    iterations = 60L,
+    dist = "ZINB",
+    relabel = TRUE,
+    N = nrow(y_matrix),
+    potts_iterations = 5L,
+    method = "integrated",
+    n_draws = 10L
+)
+```
+
+## `summarise_hicpotts_probabilities()`
+
+~~~text
+summarise_hicpotts_probabilities(
+    prob_result, ci_level = 0.95,
+    component_names = c("noise", "signal", "false signal"),
+    include_hard_calls = TRUE,
+    include_interaction_summary = TRUE
+)
+~~~
+
+**`prob_result`**
+
+Data frame containing `prob1`, `prob2`, and `prob3`, normally from either
+probability function.
+
+**`ci_level`**
+
+Quantile interval level strictly between zero and one. This interval
+describes variation across interactions, not posterior uncertainty for one
+cell.
+
+**`component_names`**
+
+Three component labels used in the summary.
+
+**`include_hard_calls`**
+
+Include MAP assignment counts and proportions.
+
+**`include_interaction_summary`**
+
+When `interactions` exists, include mean and median counts within each MAP
+class.
+
+
+For each component, the returned data frame reports mean and median probability,
+the across-interaction quantile interval, and the requested hard-call and count
+summaries. Internally it validates probability columns, computes rowwise MAP
+assignments, and aggregates by component.
+
+```{r probability-summary-example}
+probability_summary <- summarise_hicpotts_probabilities(
+    classification,
+    ci_level = 0.95,
+    include_hard_calls = TRUE,
+    include_interaction_summary = TRUE
+)
+```
+
+# Diagnostics and parameter reporting
+
+## `diagnose_hicpotts_fit()`
+
+### Signature and arguments
+
+~~~text
+diagnose_hicpotts_fit(
+    fit, burnin = NULL, ci_level = 0.95,
+    prob_result = NULL, minimum_component_cells = 0L,
+    minimum_ess = 200, maximum_rhat = 1.01,
+    minimum_chains = 4L,
+    gamma_boundary_tolerance = 0.01,
+    maximum_gamma_boundary_fraction = 0.95,
+    minimum_gamma_unique = 20L,
+    covariate_diagnostics = NULL, relabel = TRUE
+)
+~~~
+
+**`fit`**
+
+Raw fit, independent-chain list, robust fit, block-aware fit, or compatible
+diagnostic input.
+
+**`burnin`**
+
+Initial draws discarded; `NULL` uses the fit setting when available or half
+the chain.
+
+**`ci_level`**
+
+Posterior interval level.
+
+**`prob_result`**
+
+Optional probability/classification data frame used to calculate
+classification entropy and occupancy summaries.
+
+**`minimum_component_cells`**
+
+Minimum internal cells per component. Zero records occupancy without
+rejecting an empty component.
+
+**`minimum_ess`**
+
+Required bulk and tail ESS for parameter resolution.
+
+**`maximum_rhat`**
+
+Largest permitted split-R-hat.
+
+**`minimum_chains`**
+
+Recommended minimum independent chain count.
+
+**`gamma_boundary_tolerance`**
+
+Distance from zero or one treated as gamma's boundary region.
+
+**`maximum_gamma_boundary_fraction`**
+
+Maximum retained gamma fraction permitted in the boundary region for every
+chain.
+
+**`minimum_gamma_unique`**
+
+Minimum distinct retained gamma values in every chain.
+
+**`covariate_diagnostics`**
+
+Optional precomputed conditioning report. Robust fits reuse their stored
+report; absence means no demonstrated problem, not proven good conditioning.
+
+**`relabel`**
+
+Orient components before pooling chains.
+
+
+### Internal processing and return value
+
+The function extracts comparable retained draws, checks shared posterior
+targets and coefficient scales, computes posterior estimates, intervals, sign
+probabilities, bulk/tail ESS and split-R-hat, and evaluates gamma movement,
+coefficient movement, occupancy, chain count, relabelling and conditioning.
+
+It returns `parameters`, `reliability_flags`, `component_occupancy`,
+`classification_entropy`, `mcse_status`, `gamma_diagnostics`,
+`beta_mixing_status`, `noise_relationship_probabilities`, the fits used, and
+warnings. Interpret each row of `reliability_flags`; there is deliberately no
+single overall pass/fail word.
+
+```{r diagnose-example}
+diagnostics <- diagnose_hicpotts_fit(
+    fit,
+    prob_result = classification,
+    minimum_ess = 200,
+    maximum_rhat = 1.01,
+    minimum_chains = 4L
+)
+
+diagnostics$reliability_flags[c("criterion", "passed", "threshold")]
+```
+
+## `allocation_diagnostics()`
+
+~~~text
+allocation_diagnostics(
+    fit,
+    component_names = c("noise", "signal", "false signal")
+)
+~~~
+
+`fit` may be one raw fit, several chains, a robust fit, or a block-aware fit.
+`component_names` supplies the three display labels. The function uses stored
+contiguous batch means of post-burn-in latent-state indicators, so its MCSE and
+ESS account for serial dependence instead of applying an independent-binomial
+formula.
+
+It returns component-specific `N` by `N` MCSE and ESS matrices,
+`worst_cell_ess`, `max_mcse`, and, for multiple chains,
+`between_chain_disagreement` based on per-cell total-variation distance. It is
+diagnostic only and never changes probabilities or MAP labels.
+
+```{r allocation-example}
+allocation <- allocation_diagnostics(fit)
+allocation$worst_cell_ess
+allocation$max_mcse
+allocation$between_chain_disagreement
+```
+
+## `summarise_hicpotts_parameters()`
+
+~~~text
+summarise_hicpotts_parameters(
+    fit, require_reliable = TRUE, x_vars = NULL,
+    diagnose_covariates = TRUE,
+    covariate_diagnostic_args = list(),
+    pool_blocks = c("none", "posterior_weighted"),
+    pooling_draws = 100000L, pooling_seed = 1L,
+    pooling_min_expected_cells = 0, ...
+)
+~~~
+
+**`fit`**
+
+Raw fit, fit list, robust fit, block-aware fit, or output from
+`diagnose_hicpotts_fit()`.
+
+**`require_reliable`**
+
+`TRUE` enforces comparable-target and parameter-specific ESS/R-hat criteria.
+`FALSE` returns the table with a `resolved` column recording each row's
+ESS/R-hat result.
+
+**`x_vars`**
+
+Optional named covariates used for an internal conditioning check.
+
+**`diagnose_covariates`**
+
+Run that conditioning check when `x_vars` is supplied; otherwise reuse
+stored robust diagnostics when available.
+
+**`covariate_diagnostic_args`**
+
+Named threshold overrides passed to the private conditioning diagnostic.
+
+**`pool_blocks`**
+
+`"none"` retains block-specific rows. `"posterior_weighted"` returns a
+descriptive occupancy-aware aggregate, not a joint shared-parameter fit.
+
+**`pooling_draws`**
+
+Monte Carlo combinations used to form pooled block intervals.
+
+**`pooling_seed`**
+
+Reproducibility seed for block pooling.
+
+**`pooling_min_expected_cells`**
+
+Minimum expected component occupancy for a block to contribute to a
+component-specific pooled parameter.
+
+**`...`**
+
+Additional arguments forwarded to `diagnose_hicpotts_fit()` when diagnostics
+must be calculated.
+
+
+Internally this function obtains or creates diagnostics, applies the
+parameter-resolution gates, optionally combines independent block summaries,
+and attaches diagnostic metadata. Classification is available through its
+separate cell-level summary function.
+
+```{r parameter-summary-example}
+# Display estimates and diagnostic indicators from the small worked example.
+parameter_summary <- summarise_hicpotts_parameters(
+    fit,
+    x_vars = x_matrices,
+    require_reliable = FALSE
+)
+head(parameter_summary[c("parameter", "estimate", "resolved")])
+```
+
+Use `require_reliable = TRUE` to enforce the documented reporting criteria.
+The attached diagnostic metadata includes the configured thresholds and
+each recorded criterion.
+
+## `posterior_predictive_hicpotts()`
+
+~~~text
+posterior_predictive_hicpotts(
+    fit, x_vars = NULL, y = NULL,
+    dist = "ZINB", burnin = NULL,
+    n_rep = 100L, seed = 1L
+)
+~~~
+
+**`fit`**
+
+One fit, independent-chain list, robust fit, or block-aware fit.
+
+**`x_vars`**
+
+Named covariate matrices. May be omitted when a block-aware object stores
+processed data.
+
+**`y`**
+
+Observed count matrix. May be omitted for a block-aware object with stored
+processed data.
+
+**`dist`**
+
+Fitted count family; it must match the model being checked.
+
+**`burnin`**
+
+Initial discarded draws; defaults to half when no stored setting is
+available.
+
+**`n_rep`**
+
+Positive number of posterior replicated matrices.
+
+**`seed`**
+
+Integer seed controlling replication.
+
+
+The function draws posterior parameters, simulates count matrices conditional
+on each chain's final internal unforced latent allocation, and compares
+replicates with the observed map. It reports discrepancies for cellwise
+`log1p` counts, neighbour correlation, diagonal decay, overall and
+near-diagonal zero fractions, and variance-to-mean ratio. The returned list
+contains replicate discrepancies, interval summaries and observed summaries.
+
+```{r posterior-predictive-example}
+ppc <- posterior_predictive_hicpotts(
+    fit,
+    x_vars = x_matrices,
+    y = y_matrix,
+    dist = "ZINB",
+    n_rep = 5L,
+    seed = 4921L
+)
+ppc$summary
+```
+
+# Visualisation
+
+## `plot_hicpotts_mcmc_by_component()`
+
+~~~text
+plot_hicpotts_mcmc_by_component(
+    fit, index = 1L, burnin = NULL,
+    component_names = c("Noise", "Signal", "False signal"),
+    beta_names = c("Intercept", "Distance", "GC", "TES", "ACC"),
+    plot_globals = TRUE, plot_size = TRUE,
+    ask = interactive()
+)
+~~~
+
+**`fit`**
+
+One raw fit or a list of raw fits. For a robust result, pass `fit$fits` or
+`fit$all_fits`.
+
+**`index`**
+
+Fit/chain index selected when a list is supplied.
+
+**`burnin`**
+
+Location of the vertical burn-in marker; defaults to half the plotted chain.
+
+**`component_names`**
+
+Three panel labels.
+
+**`beta_names`**
+
+Regression-coefficient labels in chain-column order.
+
+**`plot_globals`**
+
+Plot gamma and family-dependent theta when available.
+
+**`plot_size`**
+
+Plot the three dispersion traces for NB/ZINB when available.
+
+**`ask`**
+
+Pause between graphics pages in an interactive session. Use `FALSE` in
+scripts and PDF devices.
+
+
+The function extracts one fit, validates chain dimensions, draws component
+coefficient traces, optionally draws dispersion and global traces, and
+invisibly returns the extracted fit used for plotting.
+
+```{r trace-example}
+plot_hicpotts_mcmc_by_component(
+    fit$fits,
+    index = 1L,
+    burnin = 20L,
+    plot_globals = TRUE,
+    plot_size = TRUE,
+    ask = FALSE
+)
+```
+
+To save the traces, open `pdf("hicpotts_traces.pdf")` before this call and
+close the device with `dev.off()` afterwards.
+
+## `plot_upper_prob_lower_count()`
+
+~~~text
+plot_upper_prob_lower_count(
+    results, bin1_col = "start", bin2_col = "end",
+    prob_col = "prob2", count_col = "interactions",
+    chr_label = "2L",
+    title = "Significant interactions detected by HiCPotts",
+    prob_agg = max, count_agg = max,
+    use_log_count = TRUE, symmetric_matrix = TRUE
+)
+~~~
+
+**`results`**
+
+Data frame containing bin coordinates, a probability column and a count
+column.
+
+**`bin1_col`**
+
+First-bin coordinate column. Usually `"start"`.
+
+**`bin2_col`**
+
+Second-bin coordinate column. Use `"start.j."` for standard `get_data()`
+output; the default `"end"` supports the legacy layout.
+
+**`prob_col`**
+
+Probability shown in the visually upper triangle, commonly `"prob2"` or
+`"prob3"`.
+
+**`count_col`**
+
+Observed counts shown in the visually lower triangle.
+
+**`chr_label`**
+
+Axis chromosome label.
+
+**`title`**
+
+Plot title.
+
+**`prob_agg`**
+
+Scalar aggregation function for duplicate probability rows and, in symmetric
+mode, opposite orientations.
+
+**`count_agg`**
+
+Scalar aggregation function for duplicate count rows and opposite
+orientations.
+
+**`use_log_count`**
+
+Display `log1p(count)` when `TRUE` or raw counts when `FALSE`.
+
+**`symmetric_matrix`**
+
+`TRUE` treats `(i,j)` and `(j,i)` as one unordered contact, validates
+mirrored counts for full matrices, and reflects triangular input. `FALSE`
+preserves ordered/asymmetric observations.
+
+
+Internally the function validates columns, canonicalizes unordered pairs when
+requested, aggregates duplicates, constructs separate upper probability and
+lower count layers, applies independent colour scales with `ggnewscale`, and
+returns a `ggplot` object. Even with symmetric input, the final graphic is
+intentionally a dual-triangle map: it does not mirror probabilities into the
+count triangle.
+
+```{r map-example}
+map <- plot_upper_prob_lower_count(
+    results = classification,
+    bin1_col = "start",
+    bin2_col = "start.j.",
+    prob_col = "prob2",
+    count_col = "interactions",
+    chr_label = "chr4",
+    title = "Signal probability and observed counts",
+    use_log_count = TRUE,
+    symmetric_matrix = TRUE
+)
+print(map)
+```
+
+# Independently fitted blocks
+
+## `combine_hicpotts_blocks()`
+
+~~~text
+combine_hicpotts_blocks(
+    fits, data = NULL, processed = NULL,
+    what = c("fit", "classification", "probabilities"), ...
+)
+~~~
+
+**`fits`**
+
+One fit or a named list containing one independently fitted result per
+matrix block.
+
+**`data`**
+
+Optional original data frame, list of block data frames, or whole-map frame
+split sequentially using fitted lattice sizes.
+
+**`processed`**
+
+Optional output from `process_data()`. It may be passed as the second
+positional argument for convenience.
+
+**`what`**
+
+Return a reusable block-aware `"fit"`, or immediately calculate combined
+`"classification"` or parameter-based `"probabilities"`.
+
+**`...`**
+
+Arguments forwarded to `classify_hicpotts()` or
+`compute_HMRFHiC_probabilities()` according to `what`.
+
+
+The function validates block counts and dimensions, preserves each block's own
+mode-selected chains and frozen priors, records block provenance, and prevents
+MCMC draws from different posteriors being treated as one chain. A single fit
+is returned unchanged for `what = "fit"`. Multiple fits yield a
+`hicpotts_block_fit`; immediate classification/probability modes return one
+combined data frame with block labels.
+
+```{r block-example, eval=FALSE}
+block_fit <- combine_hicpotts_blocks(
+    fits = fits_by_block,
+    data = data_by_block,
+    processed = processed_blocks,
+    what = "fit"
+)
+
+block_classification <- classify_hicpotts(
+    block_fit,
+    min_draws = 100L,
+    reflect = "auto"
+)
+
+block_parameters <- summarise_hicpotts_parameters(
+    block_fit,
+    pool_blocks = "none",
+    require_reliable = TRUE
+)
+
+# Descriptive cross-block aggregation, not a joint shared-parameter fit.
+pooled_parameters <- summarise_hicpotts_parameters(
+    block_fit,
+    pool_blocks = "posterior_weighted",
+    require_reliable = FALSE,
+    pooling_draws = 100000L,
+    pooling_seed = 1L
+)
+```
+
+# Complete analysis template
+
+The following template shows how the public functions fit together for one
+symmetric matrix. Choose the distribution and prior workflow before fitting;
+do not select them after inspecting which option gives the largest signal
+class.
+
+```{r complete-template, eval=FALSE}
+library(HiCPotts)
+
+input <- read.csv("contacts.csv")
+N <- length(unique(input$start))
+
+processed <- process_data(
+    input,
+    N = N,
+    standardization_y = FALSE,
+    mirror = FALSE
+)
+y <- processed$y[[1L]]
+x_vars <- lapply(processed$x_vars, function(x) x[[1L]])
+
+fit <- run_chain_betas(
+    N = N,
+    x_vars = x_vars,
+    y = y,
+    dist = "ZINB",
+    gamma_start = 0.3,
+    theta_start = 0.05,
+    size_start = rep(11, 3L),
+    iterations = 20000L,
+    burnin = 5000L,
+    n_chains = 4L,
+    seeds = c(101L, 202L, 303L, 404L),
+    robust = TRUE,
+    use_data_priors = TRUE,
+    mcse_stop = FALSE,
+    mc_cores = 4L
+)
+
+classification <- classify_hicpotts(
+    fit,
+    data = input,
+    min_draws = 100L,
+    reflect = "auto"
+)
+
+diagnostics <- diagnose_hicpotts_fit(
+    fit,
+    prob_result = classification
+)
+print(diagnostics$reliability_flags)
+
+allocation <- allocation_diagnostics(fit)
+
+parameters <- summarise_hicpotts_parameters(
+    fit,
+    x_vars = x_vars,
+    require_reliable = TRUE
+)
+
+probability_summary <- summarise_hicpotts_probabilities(classification)
+
+ppc <- posterior_predictive_hicpotts(
+    fit,
+    x_vars = x_vars,
+    y = y,
+    dist = "ZINB",
+    n_rep = 100L,
+    seed = 1L
+)
+
+map <- plot_upper_prob_lower_count(
+    classification,
+    bin1_col = "start",
+    bin2_col = "start.j.",
+    prob_col = "prob2",
+    count_col = "interactions",
+    symmetric_matrix = TRUE
+)
+print(map)
+```
+
+# Interpretation rules
+
+1. Use `classify_hicpotts()` for the official three-way cell classification.
+    Treat `compute_HMRFHiC_probabilities()` as a sensitivity analysis.
+2. Check allocation precision for probability maps and parameter diagnostics
+    for regression, gamma, theta and dispersion claims. These answer different
+    questions.
+3. Use `require_reliable = TRUE` to apply the reporting criteria, or `FALSE`
+    to display estimates together with their row-level diagnostic indicators.
+4. Use `symmetric_matrix = TRUE` only for triangular or mirrored Hi-C contacts.
+    It still plots probabilities and counts in different triangles.
+5. Record the count family, priors, seeds, iterations, burn-in, MCSE behavior,
+    ABC controls and diagnostic thresholds with every reported analysis.
+
+# Session information
+
+```{r session-info, echo=FALSE}
+sessionInfo()
+```

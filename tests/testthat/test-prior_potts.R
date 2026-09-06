@@ -5,12 +5,6 @@ test_that("gamma_prior_value returns a finite scalar in [0, 1]", {
   expect_gt(length(unique(x)), 1L)       # stochastic
 })
 
-test_that("proposalfunction mirrors gamma_prior_value", {
-  x <- replicate(100, proposalfunction())
-  expect_true(all(is.finite(x)))
-  expect_true(all(x >= 0 & x <= 1))
-})
-
 test_that("size_prior rejects invalid inputs", {
   expect_error(size_prior(-1, 1),  "positive")
   expect_error(size_prior(NA, 1),  "finite")

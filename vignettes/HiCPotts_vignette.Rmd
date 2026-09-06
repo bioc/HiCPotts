@@ -14,50 +14,134 @@ vignette: >
 
 # Introduction
 
-High-throughput chromosome conformation capture (Hi-C) technologies have revolutionized our understanding of 3D genome organization by mapping interactions between genomic loci. However, Hi-C data are inherently noisy and affected by experimental biases such as GC content, transposable elements, and DNA accessibility, which complicate the identification of biologically significant interactions.
+High-throughput chromosome conformation capture (Hi-C) technologies have
+revolutionized our understanding of 3D genome organization by mapping
+interactions between genomic loci. However, Hi-C data are inherently noisy and
+affected by experimental biases such as GC content, transposable elements, and
+DNA accessibility, which complicate the identification of biologically
+significant interactions.
 
-The HiCPotts package provides a comprehensive framework for Bayesian analysis of Hi-C interaction data using a Hidden Markov Random Field (HMRF) model. Hi-C is a high-throughput sequencing technique that captures chromatin interactions across the genome, revealing spatial organization. This package models these interactions using a mixture of distributions (Poisson, Negative Binomial, Zero-Inflated Poisson, or Zero-Inflated Negative Binomial) while accounting for covariates, genomic distance, GC content, accessibility, and transposable element (TE) counts. The HMRF framework incorporates spatial dependencies via a Potts model, and the package employs Markov Chain Monte Carlo (MCMC) methods for parameter estimation.
+The HiCPotts package provides a comprehensive framework for Bayesian analysis of
+Hi-C interaction data using a Hidden Markov Random Field (HMRF) model. Hi-C is a
+high-throughput sequencing technique that captures chromatin interactions across
+the genome, revealing spatial organization. This package models these
+interactions using a mixture of distributions (Poisson, Negative Binomial,
+Zero-Inflated Poisson, or Zero-Inflated Negative Binomial) while accounting for
+covariates, genomic distance, GC content, accessibility, and transposable
+element (TE) counts. The HMRF framework incorporates spatial dependencies via a
+Potts model, and the package employs Markov Chain Monte Carlo (MCMC) methods for
+parameter estimation.
 
-An HMRF models spatial dependencies in a lattice (e.g., a matrix of Hi-C interactions) by assigning each site to one of several latent states (mixture components). The Potts model governs spatial interactions, encouraging neighboring sites to share the same state, controlled by an interaction parameter ($\gamma$).
+An HMRF models spatial dependencies in a lattice (e.g., a matrix of Hi-C
+interactions) by assigning each site to one of several latent states (mixture
+components). The Potts model governs spatial interactions, encouraging
+neighboring sites to share the same state, controlled by an interaction
+parameter ($\gamma$).
 
-The package uses MCMC to estimate model parameters (regression coefficients ($\beta$), zero-inflation parameter ($\theta$), dispersion parameter for Binomial distributions, and ($\gamma$)) by sampling from their posterior distributions. Covariates like genomic distance and GC content adjust for biases in interaction counts. Each Hi-C interaction is modeled as belonging to one of three mixture components following a specified distribution.
+The package uses MCMC to estimate model parameters (regression coefficients
+($\beta$), zero-inflation parameter ($\theta$), dispersion parameter for
+Binomial distributions, and ($\gamma$)) by sampling from their posterior
+distributions. Covariates like genomic distance and GC content adjust for biases
+in interaction counts. Each Hi-C interaction is modeled as belonging to one of
+three mixture components following a specified distribution.
 
-The package performance was optimized through C++ implementations using Rcpp and RcppArmadillo. The package also supports parallel processing and flexible distribution choices, making it suitable for large-scale genomic analyses.
+The package performance was optimized through C++ implementations using Rcpp and
+RcppArmadillo. The package also supports parallel processing and flexible
+distribution choices, making it suitable for large-scale genomic analyses.
 
 # Motivation
 
-Most existing computational methods fail to adequately model the spatial dependencies and overdispersion in Hi-C contact matrices, limiting their ability to distinguish true signals from other components such as noise. The HiCPotts package addresses these challenges by providing a novel Bayesian framework to detect enriched interactions while accounting for experimental biases in Hi-C data. Its integration into Bioconductor is motivated by its robust statistical approach, computational efficiency, and ability to provide insights into bias sources, making it a valuable tool for researchers studying chromatin architecture in diverse biological contexts.
+Most existing computational methods fail to adequately model the spatial
+dependencies and overdispersion in Hi-C contact matrices, limiting their ability
+to distinguish true signals from other components such as noise. The HiCPotts
+package addresses these challenges by providing a novel Bayesian framework to
+detect enriched interactions while accounting for experimental biases in Hi-C
+data. Its integration into Bioconductor is motivated by its robust statistical
+approach, computational efficiency, and ability to provide insights into bias
+sources, making it a valuable tool for researchers studying chromatin
+architecture in diverse biological contexts.
 
-HiCPotts package also extends the existing knowledge of classifying interacting loci into two components to three components (true signal, false signal, and noise) and its focus on bias correction (DNA accessibility, transposable elements) enhance its utility for integrative genomic studies. 
+HiCPotts package also extends the existing knowledge of classifying interacting
+loci into two components to three components (true signal, false signal, and
+noise) and its focus on bias correction (DNA accessibility, transposable
+elements) enhance its utility for integrative genomic studies.
 
 # Comparison with Existing Packages
-There are several Bioconductor packages that addresses Hi-C data analysis, each with distinct functionalities and scopes. We highlight the uniqueness of the HiCPotts package with other existing packages:
+There are several Bioconductor packages that addresses Hi-C data analysis, each
+with distinct functionalities and scopes. We highlight the uniqueness of the
+HiCPotts package with other existing packages:
 
-a.  diffHic: The diffHic package focuses on detecting differential interactions between biological conditions using the edgeR framework for statistical modeling. diffHic provides methods for read pair alignment, binning, filtering, and normalization of biases (e.g., trended or CNV-driven). While diffHic excels at differential analysis, it does not explicitly model spatial dependencies in Hi-C data or account for overdispersion as HiCPotts does. HiCPotts is better suited for identifying enriched interactions within a Hi-C experiment and exploring bias sources, whereas diffHic is ideal for comparative studies across conditions.
+a. diffHic: The diffHic package focuses on detecting differential interactions
+between biological conditions using the edgeR framework for statistical
+modeling. diffHic provides methods for read pair alignment, binning, filtering,
+and normalization of biases (e.g., trended or CNV-driven). While diffHic excels
+at differential analysis, it does not explicitly model spatial dependencies in
+Hi-C data or account for overdispersion as HiCPotts does. HiCPotts is better
+suited for identifying enriched interactions within a Hi-C experiment and
+exploring bias sources, whereas diffHic is ideal for comparative studies across
+conditions.
 
 
-b.  HiCcompare and multiHiCcompare: HiCcompare offers joint normalization and difference detection for multiple Hi-C datasets, operating on sparse chromatin interaction matrices. multiHiCcompare extends this to handle multiple groups and replicates using cyclic loess normalization and a general linear model (GLM) based on edgeR. Both packages emphasize comparative analysis and normalization but do not focus on detecting enriched interactions within a dataset or modeling spatial dependencies. HiCPotts’s Bayesian approach and bias correction make it complementary, as it prioritizes significant interaction detection and bias insight over differential analysis.
+b. HiCcompare and multiHiCcompare: HiCcompare offers joint normalization and
+difference detection for multiple Hi-C datasets, operating on sparse chromatin
+interaction matrices. multiHiCcompare extends this to handle multiple groups and
+replicates using cyclic loess normalization and a general linear model (GLM)
+based on edgeR. Both packages emphasize comparative analysis and normalization
+but do not focus on detecting enriched interactions within a dataset or modeling
+spatial dependencies. HiCPotts’s Bayesian approach and bias correction make it
+complementary, as it prioritizes significant interaction detection and bias
+insight over differential analysis.
 
-c.  HiCDCPlus: HiCDCPlus enables significant interaction calling and differential analysis for Hi-C and HiChIP data using a negative binomial generalized linear model. It includes tools for topologically associating domain (TAD) and A/B compartment calling, integrating with visualization tools. Like HiCPotts, it calls significant interactions, but HiCPotts’s HMRF-based model and ABC approach provide superior handling of spatial dependencies and computational tractability for chromosome-wide analysis. HiCDCPlus requires GC content information (computable internally), while HiCPotts additionally corrects for transposable elements and DNA accessibility biases.
+c. HiCDCPlus: HiCDCPlus enables significant interaction calling and differential
+analysis for Hi-C and HiChIP data using a negative binomial generalized linear
+model. It includes tools for topologically associating domain (TAD) and A/B
+compartment calling, integrating with visualization tools. Like HiCPotts, it
+calls significant interactions, but HiCPotts’s HMRF-based model and ABC
+approach
+provide superior handling of spatial dependencies and computational tractability
+for chromosome-wide analysis. HiCDCPlus requires GC content information
+(computable internally), while HiCPotts additionally corrects for transposable
+elements and DNA accessibility biases.
 
-d.  scHiCcompare: Designed for single-cell Hi-C data, scHiCcompare supports imputation, normalization, and differential interaction analysis across single-cell datasets. Its focus on single-cell data makes it distinct from HiCPotts, which targets bulk Hi-C data. HiCPotts’s ability to model overdispersion and spatial dependencies is not replicated in scHiCcompare, which prioritizes single-cell-specific challenges.
+d. scHiCcompare: Designed for single-cell Hi-C data, scHiCcompare supports
+imputation, normalization, and differential interaction analysis across
+single-cell datasets. Its focus on single-cell data makes it distinct from
+HiCPotts, which targets bulk Hi-C data. HiCPotts’s ability to model
+overdispersion and spatial dependencies is not replicated in scHiCcompare, which
+prioritizes single-cell-specific challenges.
 
 
-Other Tools: Packages like HiCdat and HiCExperiment provide preprocessing, visualization, or data manipulation for Hi-C data but lack the statistical rigor of HiCPotts for interaction detection. HiCdat offers a graphical interface for preprocessing and integrative analysis with other omics data, while HiCExperiment provides data structures for 3C-related experiments. Neither focuses on enriched interaction detection or bias correction like HiCPotts.
+Other Tools: Packages like HiCdat and HiCExperiment provide preprocessing,
+visualization, or data manipulation for Hi-C data but lack the statistical rigor
+of HiCPotts for interaction detection. HiCdat offers a graphical interface for
+preprocessing and integrative analysis with other omics data, while
+HiCExperiment provides data structures for 3C-related experiments. Neither
+focuses on enriched interaction detection or bias correction like HiCPotts.
 
 # Features of HiCPotts
 
-HiCPotts allows researchers to identify significant intra-chromosomal interactions in Hi-C data while correcting for experimental biases. Its key features include:
+HiCPotts allows researchers to identify significant intra-chromosomal
+interactions in Hi-C data while correcting for experimental biases. Its key
+features include:
 
 1.  Use of Zero-Inflated distributions to handle overdispersion.
 
-2.  An HMRF-based Bayesian framework with the Potts model for spatial dependency.
+2.  An HMRF-based Bayesian framework with the Potts model for spatial
+    dependency.
 
-3.  ABC for computationally efficient handling of the Potts model’s normalizing constant.
+3.  ABC handles the Potts model’s normalizing constant efficiently
+    constant.
 
-4.  Bias correction for GC content, transposable elements, and DNA accessibility.
+4.  Bias correction for GC content, transposable elements, and DNA
+    accessibility.
 
-5.  Unlike diffHic, HiCcompare, and multiHiCcompare, which focus on differential analysis, or HiCDCPlus, which balances interaction calling and differential analysis, HiCPotts prioritizes enriched interaction detection. Its bias correction and spatial modeling make it a powerful complement to existing tools, enhancing Bioconductor’s suite for 3D genome analysis. HiCPotts can be used for initial interaction detection, followed by diffHic or HiCcompare for differential studies, creating a comprehensive Hi-C analysis workflow.
+5.  Unlike diffHic, HiCcompare, and multiHiCcompare, which focus on differential
+    analysis, or HiCDCPlus, which balances interaction calling and differential
+    analysis, HiCPotts prioritizes enriched interaction detection. Its bias
+    correction and spatial modeling make it a powerful complement to existing
+    tools, enhancing Bioconductor’s suite for 3D genome analysis. HiCPotts can
+    be used for initial interaction detection, followed by diffHic or HiCcompare
+    for differential studies, creating a comprehensive Hi-C analysis workflow.
 
 
 # Installation
@@ -81,9 +165,12 @@ install.packages(c("Rcpp", "RcppArmadillo", "parallel"))
 ```{r install-bioc, echo=TRUE, eval=FALSE}
 # Install Bioconductor dependencies
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
-  install.packages("BiocManager")
+    install.packages("BiocManager")
 }
-BiocManager::install(c("rhdf5", "strawr", "rtracklayer", "GenomicRanges", "BSgenome", "Biostrings"))
+BiocManager::install(c(
+    "rhdf5", "strawr", "rtracklayer",
+    "GenomicRanges", "BSgenome", "Biostrings"
+))
 ```
 
 ```{r load-package, echo=TRUE, eval=TRUE}
@@ -94,32 +181,51 @@ library(HiCPotts)
 
 # Workflow Overview
 
-The HiCPotts workflow involves four main steps:
+The HiCPotts workflow involves five main steps:
 
-1.  Data Loading: Use `get_data()` to read Hi-C contact matrices (`.hic`, `.cool`, `.h5`) and annotate bins with GC content, accessibility, and TE counts.
+1.  Data Loading: Use `get_data()` to read HDF5-backed Hi-C contact matrices
+    (`.cool` and supported `.h5` schemas) and annotate bins with GC content,
+    accessibility, and TE counts.
 
-2.  Data Processing: Use `process_data()` to convert the data into (N \times N) matrices of interactions and covariates.
+2.  Data Processing: Use `process_data()` to convert the data into (N \times N)
+    matrices of interactions and covariates.
 
-3.  MCMC Simulation: Use `run_chain_betas()` to run MCMC chains, estimating parameters and latent state assignments.
+3.  MCMC Simulation: Use `run_chain_betas()` to run MCMC chains, estimating
+    parameters and latent state assignments.
 
-4.  Probability Computation: Use `compute_HMRFHiC_probabilities()` to calculate posterior probabilities of component assignments.
+4.  Classification: Use `classify_hicpotts()` to pool post-burn-in latent-state
+    frequencies and assign every interaction to noise, signal, or false signal.
+    Parameter-plus-Potts probabilities are available separately through
+    `compute_HMRFHiC_probabilities()` as a sensitivity check.
+
+5.  Visualization: Use `plot_upper_prob_lower_count()` to create a dual-triangle
+    Hi-C heatmap that overlays posterior probabilities (upper triangle, blue
+    gradient) and observed interaction counts (lower triangle, grey gradient)
+    for intuitive result interpretation.
+
+For an argument-by-argument guide to every exported function, including return
+objects, internal processing stages and runnable examples, see
+`vignette("HiCPotts_function_reference", package = "HiCPotts")`.
 
 We’ll demonstrate this workflow using synthetic Hi-C data for simplicity.
 
 ## Step 1: Loading Hi-C Data
 
-The `get_data()` function reads Hi-C contact matrices and annotates bins with covariates. For this example, we simulate a small dataset instead of using real Hi-C files, which require specific file formats and genome annotations.
+The `get_data()` function reads Hi-C contact matrices and annotates bins with
+covariates. For this example, we simulate a small dataset instead of using real
+Hi-C files, which require specific file formats and genome annotations.
 
 Simulate a 10x10 Hi-C dataset
 
 ```{r simulate-data, include=FALSE, eval=TRUE}
 set.seed(4921)
 
-# Lattice size: an N x N grid of genomic bins.
-# Each cell of the grid represents an interaction between bin i and bin j.
+# Lattice size: an N x N grid of genomic bins.  Each cell of the grid
+# represents an interaction between bin i and bin j.
 N <- 10
 
-# Define the start coordinate of each bin (10 bins, 2 kb wide → 20 kb region)
+# Define the start coordinate of each bin (10 bins, 2 kb wide →
+# 20 kb region)
 bins <- seq(1, 20000, by = 2000)
 
 # Create every pairwise combination of bin i vs bin j
@@ -133,31 +239,48 @@ data$end <- data$start.j. + 1999
 # Chromosome label (Drosophila chr2L here)
 data$chrom <- "chr2L"
 
-# ── Simulate the four bias covariates ────────────────────────────────────────
-data$GC <- runif(nrow(data), 0.3, 0.7) # Simulated GC content, GC fraction (biological range 30–70%)
+# ── Simulate the four bias covariates
+# --- Simulate covariates and counts
+# Simulated GC content, GC fraction (biological range 30–70%)
+data$GC <- runif(nrow(data), 0.3, 0.7)
 
-data$ACC <- runif(nrow(data), 0, 1) # Simulated accessibility, DNase-I accessibility score (0–1)
+# Simulated accessibility, DNase-I accessibility score (0–1)
+data$ACC <- runif(nrow(data), 0, 1)
 
-data$TES <- rpois(nrow(data), 2) # Simulated TE counts, Count of overlapping transposable elements
+# Simulated TE counts, count of overlapping transposable elements
+data$TES <- rpois(nrow(data), 2)
 
 # Poisson(λ = 5) approximates sparse Hi-C counts at this resolution
-data$interactions <- rpois(nrow(data), lambda = 5) # Simulated interaction counts
+# Simulated interaction counts
+data$interactions <- rpois(nrow(data), lambda = 5)
 
-# Coerce to a plain data.frame (expand.grid returns a class with extra attrs)
+# Coerce to a plain data.frame (expand.grid returns a class with extra
+# attrs)
 data <- as.data.frame(data)
 
 # Inspect the first few rows – note the required column names:
-#   start, start.j., end.i., end, chrom, GC, ACC, TES, interactions
+# start, start.j., end.i., end, chrom, GC, ACC, TES, interactions
 head(data)
 ```
 
-In practice, the `get_data()` function is used to load real Hi-C data from .cool, .mcool, or .hic files, similar to the HiCExperiment package. Both convert these files into structured outputs, but they differ in their results. HiCExperiment generates a HiCExperiment object that includes a contact matrix, genomic regions, metadata (e.g., resolution, chromosome), and pairwise interactions. In contrast, `get_data()` produces a data frame from the same file types, incorporating optional calculations (if available) to identify sources of experimental biases, such as GC content or DNA accessibility. Also the function support loading profiles as bigwig or bedgraph and will be imported as GRanges.
+In practice, the `get_data()` function is used to load real Hi-C data from a
+`.cool` file or a supported `.h5` schema. Binary `.hic` files must first be
+converted to `.cool` or read separately with `strawr::straw()`. For `.mcool`,
+select and export the required resolution as `.cool` before calling
+`get_data()`. These formats can also be represented by other Bioconductor
+containers, but their returned objects differ.
+HiCExperiment generates a HiCExperiment object that includes a contact matrix,
+genomic regions, metadata (e.g., resolution, chromosome), and pairwise
+interactions. In contrast, `get_data()` produces a data frame from the same file
+types, incorporating optional calculations (if available) to identify sources of
+experimental biases, such as GC content or DNA accessibility. Also the function
+support loading profiles as bigwig or bedgraph and will be imported as GRanges.
 
 ```{r get_data, include=FALSE, eval=FALSE}
 # Example (not run)
 # For actual Hi-C / Micro-C files use get_data() with these arguments:
 #
-#   file_path      – path to a .cool, .mcool, .hic, or .h5 matrix
+#   file_path      – path to a .cool or supported .h5 matrix
 #   chr            – chromosome to extract (e.g. "chr2L", "chr4")
 #   start, end     – genomic window (bp, 1-based inclusive)
 #   resolution     – target bin size in bp; native bins are merged/sliced
@@ -166,140 +289,278 @@ In practice, the `get_data()` function is used to load real Hi-C data from .cool
 #   chain_file     – optional liftOver chain if acc_wig is in another assembly
 #   te_granges     – optional BED/GTF (or GRanges) of transposable elements
 
-data <- prepare_data(
-  file_path = "path/to/hic_file.h5",
-  chr = "chr2L",
-  start = 1,
-  end = 20000,
-  resolution = 2000,
-  genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
-  acc_wig = "path/to/dnase.wig",
-  chain_file = "path/to/chain.file",
-  te_granges = "path/to/te.gtf"
+data <- get_data(
+    file_path = "path/to/hic_file.h5",
+    chr = "chr2L",
+    start = 1,
+    end = 20000,
+    resolution = 2000,
+    genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
+    acc_wig = "path/to/dnase.wig",
+    chain_file = "path/to/chain.file",
+    te_granges = "path/to/te.gtf"
 )
 ```
 
 ## Step 2: Processing Data
 
-The `process_data()` function converts the data frame generated through the `prepare_data()` function into a list of (N $\times$ N) matrices for interactions (`y`) and covariates (`x_vars`), optionally scaling interaction counts. Also, if a HiCExperiment object is already available and the sources of biases are known and organized in a separate data frame, these can be combined into a single data frame using base R functions and the `prepare_data()` function to convert into a list for analysis.
+The `process_data()` function converts the data frame generated through the
+`prepare_data()` function into a list of (N $\times$ N) matrices for
+interactions (`y`) and covariates (`x_vars`), optionally scaling interaction
+counts. Also, if a HiCExperiment object is already available and the sources of
+biases are known and organized in a separate data frame, these can be combined
+into a single data frame using base R functions and the `prepare_data()`
+function to convert into a list for analysis.
 
 ```{r process_data, include=FALSE, eval=TRUE}
-# ── Reshape the tidy interaction table into matrices for MCMC ────────────────
-# process_data() returns a list with two elements:
-#   $y      – an N x N matrix of observed interaction counts
-#   $x_vars – a list of N x N matrices, one per covariate
-#             (distance, GC, TES, ACC)
-#
-# Arguments:
-#   data             – data.frame with the 9 required columns (see above)
-#   N                – lattice dimension (here 10, matching 10 bins)
-#   scale_max        – upper bound used when rescaling counts (prevents
-#                      very large values from dominating the likelihood)
-#   standardization_y – TRUE rescales counts to [0, scale_max]; FALSE keeps raw
+# ── Reshape the tidy interaction table into matrices
+# for MCMC
+# ────────────────
+# process_data() returns a list with two elements: $y – an N x N
+# matrix of observed interaction counts $x_vars – a list of N x
+# N matrices, one per covariate (distance, GC, TES, ACC) Arguments: data
+# – data.frame with the 9 required columns (see above) N
+# – lattice dimension (here 10, matching 10 bins) scale_max
+# – upper bound used when rescaling counts; only consulted when
+# standardization_y = TRUE standardization_y – keep FALSE for
+# count models. The Poisson/NB/ZIP/ZINB likelihoods require raw integer
+# counts; min-max rescaling (TRUE) breaks the count assumption and is
+# retained only for backwards compatibility.
 
-processed <- process_data(data, N = N, scale_max = 500, standardization_y = TRUE)
+processed <- process_data(data, N = N, standardization_y = FALSE)
 
 # Pull the two pieces out of the returned list
-x_vars <- processed[["x_vars"]] # Single matrix for this example
+x_vars <- processed[["x_vars"]]  # Single matrix for this example
 y <- processed[["y"]]
 
 # Inspect x_vars: should be a list of distance, GC, TES, ACC matrices
-str(x_vars) # Lists of distance, GC, TEs, ACC matrices
+str(x_vars)  # Lists of distance, GC, TEs, ACC matrices
 ```
 
-This produces matrices for distance, GC, TEs, ACC, and interaction counts, ready for MCMC.
+This produces matrices for distance, GC, TEs, ACC, and interaction counts, ready
+for MCMC.
 
 ## Step 3: Running MCMC Simulations
 
-The `run_chain_betas()` function runs MCMC simulations to estimate parameters (($\beta$), ($\gamma$), ($\theta$ (for Zero-Inflated distributions)), size(for Negative binomial distributions)) and latent state assignments ((z)). In the example below, we use the Zero-Inflated Negative Binomial (ZINB) distribution to model the simulated sparse Hi-C data.
+The `run_chain_betas()` function runs MCMC simulations to estimate parameters
+(($\beta$), ($\gamma$), ($\theta$ (for Zero-Inflated distributions)), size(for
+Negative binomial distributions)) and latent state assignments ((z)). In the
+example below, we use the Zero-Inflated Negative Binomial (ZINB) distribution to
+model the simulated sparse Hi-C data.
 
 ```{r setup_MCMC, include=FALSE, eval=TRUE}
-# ── Define MCMC hyper-parameters and starting values ─────────────────────────
+# ── Define MCMC hyper-parameters and starting values
+# ─────────────────────────
 
 # Potts spatial-coupling parameter (γ). Values closer to 1 encourage
 # neighbouring bins on the lattice to share the same latent state.
-gamma_prior <- 0.3
+gamma_start <- 0.3
 
-# Total number of MCMC iterations. Burn-in defaults to iterations / 2.
-# Use a small value here for vignette speed; 5 000+ is typical for real data.
+# Total number of MCMC iterations. Burn-in defaults to iterations / 2.  Use
+# a small value here for vignette speed; 5 000+ is typical for real data.
 iterations <- 20
 
-# Initial value for the zero-inflation parameter (θ).
-# Required when dist = "ZIP" or "ZINB"; ignored otherwise.
+# Initial value for the zero-inflation parameter (θ).  Required when
+# dist = 'ZIP' or 'ZINB'; ignored otherwise.
 theta_start <- c(0.5)
 
-# size_start (commented out) – only needed for "NB" or "ZINB":
-# one initial over-dispersion value per mixture component.
-# size_start <- c(1, 1, 1)
+# size_start (commented out) – only needed for 'NB' or 'ZINB':
+# one initial over-dispersion value per mixture component.  size_start <-
+# c(1, 1, 1)
 
-# Choice of count distribution for interactions. Options:
-#   "Poisson", "NB", "ZIP", "ZINB"
-# ZIP is a reasonable default for sparse Hi-C with many structural zeros.
+# Choice of count distribution for interactions. Options: 'Poisson', 'NB',
+# 'ZIP', 'ZINB' ZIP is a reasonable default for sparse Hi-C with many
+# structural zeros.
 dist <- "ZIP"
 ```
 
 ```{r run_MCMC, include=FALSE, eval=TRUE}
-# ── Run the Metropolis-Hastings MCMC sampler ─────────────────────────────────
+# --- Run the Metropolis-Hastings MCMC sampler
 # run_chain_betas() samples from the joint posterior of the regression
 # coefficients for all three mixture components simultaneously.
 
 results <- run_chain_betas(
-  N = N,
-  gamma_prior = gamma_prior,
-  iterations = iterations,
-  x_vars = x_vars,
-  y = y,
-  theta_start = theta_start,
-  use_data_priors = TRUE,
-  # user_fixed_priors = FALSE,
-  # epsilon = NULL,
-  distance_metric = "manhattan",
-  dist = dist,
-  # size_start = size_start,
-  mc_cores = 1
+    N = N,
+    gamma_start = gamma_start,
+    iterations = iterations,
+    x_vars = x_vars,
+    y = y,
+    theta_start = theta_start,
+    use_data_priors = TRUE,
+    # user_fixed_priors = NULL,
+    # epsilon = NULL,
+    distance_metric = "manhattan",
+    dist = dist,
+    # size_start = size_start,
+    mc_cores = 1
 )
 ```
 
 ```{r MCMC_results, include=FALSE, eval=TRUE}
-# ── Extract the individual components of the MCMC output ─────────────────────
-# 'results' is a named list. Each element corresponds to a different set
-# of posterior samples.
+# ── Extract the individual components of the MCMC
+# output
+# ─────────────────────
+# 'results' is a named list. Each element corresponds to a different set of
+# posterior samples.
 
-# Regression coefficient chains – one matrix per mixture component
-# (rows = iterations, columns = covariates incl. intercept)
+# Regression coefficient chains – one matrix per mixture
+# component (rows = iterations, columns = covariates incl. intercept)
 
-chains <- results[["chains"]]
+chains <- results
 
 # Posterior samples of the Potts spatial-coupling parameter γ
-gamma <- results[["gamma"]]
+gamma <- results[[1]][["gamma"]]
 
-# Posterior samples of the zero-inflation parameter θ (ZIP / ZINB only)
-theta <- results[["theta"]]
+# Posterior samples of the zero-inflation parameter θ (ZIP / ZINB
+# only)
+theta <- results[[1]][["theta"]]
 
 # Over-dispersion size parameter – only present for NB / ZINB
-# size <- results[["size]]
+# size <- results[['size]]
 ```
 
-The output includes chains for regression parameters (`chains`), the Potts interaction parameter (`gamma`), zero-inflation parameter (`theta`), and dispersion parameters (`size`).
+The output includes chains for regression parameters (`chains`), the Potts
+interaction parameter (`gamma`), zero-inflation parameter (`theta`), and
+dispersion parameters (`size`).
 
-## Step 4: Computing Posterior Probabilities
+## Step 4: Official Three-Component Classification
 
-The `compute_HMRFHiC_probabilities()` function calculates posterior probabilities for each interaction belonging to one of three mixture components, using the MCMC chains.
+The official classification comes from the latent states sampled by the full
+emission-plus-Potts model. `classify_hicpotts()` pools post-burn-in membership
+frequencies and returns exactly three biological labels: noise, signal and
+false signal. Confidence diagnostics do not create another class.
 
 ```{r compute_result, include=FALSE, eval=TRUE}
-# ── Compute posterior HMRF component-assignment probabilities ────────────────
-# For every bin-pair, compute P(component = k) for k = 1, 2, 3 using the
-# posterior-mean regression parameters (first iterations/2 are discarded
-# as burn-in internally).
+probs <- classify_hicpotts(chains, data = data, min_draws = 5L)
 
-probs <- compute_HMRFHiC_probabilities(
-  data = data,
-  chain_betas = chains,
-  iterations = iterations,
-  dist = "ZIP"
+# Matrices of probabilities for the first component, which translate
+# to assigning interactions to biological states (e.g., active vs.
+# inactive chromatin).
+probs$prob1
+
+# Optional parameter-plus-Potts check; this never replaces `probs`
+# or its labels.
+parameter_probs <- compute_HMRFHiC_probabilities(
+    data = data, chain_betas = chains, iterations = iterations,
+    N = N, dist = "ZIP", relabel = TRUE
+)
+head(parameter_probs[, c("prob1", "prob2", "prob3")])
+```
+
+## Step 5: Parameter Summaries and Diagnostics
+
+HiCPotts reports posterior estimates together with intervals, effective
+sample sizes and split-chain R-hat. `diagnose_hicpotts_fit()` records each
+criterion and its threshold in `reliability_flags`.
+`summarise_hicpotts_parameters()` applies the reporting criteria described
+in its help page; classification has a separate cell-level summary.
+
+Cross-chain convergence assessment uses independently seeded chains.
+`process_data()` wraps its
+count matrix in a length-1 list, so pass `y[[1]]` to fit one dataset:
+
+```{r diagnose_fit, echo=TRUE, eval=TRUE}
+multi <- run_chain_betas(
+    N = N, gamma_start = gamma_start, iterations = iterations,
+    x_vars = x_vars, y = y[[1]], theta_start = theta_start,
+    use_data_priors = TRUE, dist = dist,
+    n_chains = 2, seeds = 1:2, mc_cores = 1
 )
 
-probs$prob1 # This produces matrices of probabilities for the first component, which translate to assigning interactions to biological states (e.g., active vs. inactive chromatin).
+diagnostics <- diagnose_hicpotts_fit(multi)
+diagnostics$reliability_flags[, c("criterion", "passed")]
+```
+
+This 20-iteration example demonstrates the interface. Its ESS can be
+compared directly with the default threshold of 200; production analyses
+use a chain length chosen for the desired Monte Carlo precision. See
+`?diagnose_hicpotts_fit` for the definition of every recorded criterion.
+The following call displays estimates and the row-level diagnostic result:
+
+```{r summarise_parameters, echo=TRUE, eval=TRUE}
+parameter_summary <- summarise_hicpotts_parameters(multi,
+    require_reliable = FALSE
+)
+head(parameter_summary[, c(
+    "parameter", "estimate", "CI_lower", "CI_upper", "resolved"
+)])
+```
+
+For threshold-enforced reporting, use `require_reliable = TRUE`.
+The `resolved` column records whether each row meets its ESS/R-hat criteria;
+the attached metadata records the other diagnostic results.
+
+Two further checks are worth running before interpreting results.
+`allocation_diagnostics()` reports Monte Carlo error and effective sample
+size for the membership probabilities themselves, cell by cell, so a
+probability sitting near a decision boundary can be told apart from one
+that is merely under-sampled:
+
+```{r allocation_diagnostics, echo=TRUE, eval=TRUE}
+alloc <- allocation_diagnostics(multi)
+names(alloc)
+
+# Effective sample size of the worst-resolved lattice cell.
+alloc$worst_cell_ess
+```
+
+`posterior_predictive_hicpotts()` answers the complementary question of
+whether the fitted model reproduces the observed count distribution at
+all. Each row compares an observed summary with the range obtained from
+replicated datasets simulated from the posterior:
+
+```{r posterior_predictive, echo=TRUE, eval=TRUE}
+pp <- posterior_predictive_hicpotts(
+    multi,
+    x_vars = x_vars, y = y[[1]], dist = dist, n_rep = 20L
+)
+pp$summary
+```
+
+## Step 6: Visualizing Results
+
+The `plot_upper_prob_lower_count()` function produces a symmetric Hi-C heatmap
+where the two triangles convey complementary information:
+
+- **Upper triangle** — posterior probability of belonging to the
+    elevated-signal
+    component (`prob2` by default), rendered in a blue gradient. Dark blue
+    indicates a high probability of enriched interaction.
+- **Lower triangle** — observed interaction counts (or their `log1p`
+    transform),
+    rendered in a grey gradient. Darker shading corresponds to higher counts.
+
+Plotting both layers in a single figure makes it straightforward to assess where
+the model assigns high signal probabilities and whether those assignments are
+supported by the raw counts.
+
+The function accepts the data frame returned by `classify_hicpotts()` directly.
+Supply the column names for the two bin coordinates (`bin1_col` and `bin2_col`),
+the probability column (`prob_col`), and the count column (`count_col`). For the
+synthetic dataset the bin start coordinates are stored in `start` (bin *i*) and
+`start.j.` (bin *j*).
+
+Set `symmetric_matrix = TRUE` for a Hi-C contact map that contains one complete
+triangle or two mirrored copies of each contact. A full matrix is checked for
+equal mirrored counts before plotting. Set `symmetric_matrix = FALSE` only when
+the two orientations are intentionally different; in that mode the ordered
+upper and lower cells are preserved without cross-triangle aggregation. The
+synthetic example below samples cells independently, so it uses the ordered
+mode; the genuine Hi-C and Micro-C examples use the symmetric mode.
+
+```{r plot_results, echo=TRUE, eval=TRUE}
+p <- plot_upper_prob_lower_count(
+    results       = probs,
+    bin1_col      = "start",
+    bin2_col      = "start.j.",
+    prob_col      = "prob2",
+    count_col     = "interactions",
+    chr_label     = "2L",
+    title         = "Significant interactions detected by HiCPotts",
+    use_log_count = TRUE,
+    symmetric_matrix = FALSE
+)
+print(p)
 ```
 
 
@@ -322,29 +583,35 @@ annotations for bias correction.
 
 ```{r hic_paths, echo=TRUE, eval=TRUE}
 # Hi-C contact matrix (.cool, 100 kb, BG3 cells, chr4)
-hic_file   <- system.file("extdata",
-                          "BG3_WT_merged_hic_matrix_chr4_100Kb.cool",
-                          package = "HiCPotts")
+hic_file <- system.file("extdata",
+    "BG3_WT_merged_hic_matrix_chr4_100Kb.cool",
+    package = "HiCPotts"
+)
 
 # DNase-I accessibility bedGraph (dm3 genome coordinates)
 dnase_file <- system.file("extdata",
-                          "DNaseI_BG3_gr_chr4.bedGraph",
-                          package = "HiCPotts")
+    "DNaseI_BG3_gr_chr4.bedGraph",
+    package = "HiCPotts"
+)
 
 # LiftOver chain — maps dm3 accessibility up to dm6 assembly
 chain_file <- system.file("extdata",
-                          "dm3ToDm6_chr4_only.chain",
-                          package = "HiCPotts")
+    "dm3ToDm6_chr4_only.chain",
+    package = "HiCPotts"
+)
 
 # Transposable-element annotations (GTF, dm6 chr4)
-te_file    <- system.file("extdata",
-                          "dm6_TEs_chr4.gtf",
-                          package = "HiCPotts")
+te_file <- system.file("extdata",
+    "dm6_TEs_chr4.gtf",
+    package = "HiCPotts"
+)
 
-stopifnot(file.exists(hic_file),
-          file.exists(dnase_file),
-          file.exists(chain_file),
-          file.exists(te_file))
+stopifnot(
+    file.exists(hic_file),
+    file.exists(dnase_file),
+    file.exists(chain_file),
+    file.exists(te_file)
+)
 ```
 
 ### Step 2 — Load Hi-C data and compute covariates
@@ -356,15 +623,15 @@ stopifnot(file.exists(hic_file),
 #   3. Lifts over the DNase-I signal (dm3 -> dm6) and aggregates per bin
 #   4. Counts transposable elements overlapping each bin pair
 hic_data <- get_data(
-  file_path      = hic_file,
-  chr            = "chr4",
-  start          = 1,
-  end            = 400000,
-  resolution     = 200000,
-  genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
-  acc_wig        = dnase_file,
-  chain_file     = chain_file,
-  te_granges     = te_file
+    file_path      = hic_file,
+    chr            = "chr4",
+    start          = 1,
+    end            = 400000,
+    resolution     = 200000,
+    genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
+    acc_wig        = dnase_file,
+    chain_file     = chain_file,
+    te_granges     = te_file
 )
 
 head(hic_data)
@@ -377,14 +644,13 @@ head(hic_data)
 N_hic <- 14
 
 processed_hic <- process_data(
-  hic_data,
-  N                 = N_hic,
-  scale_max         = 500,
-  standardization_y = TRUE
+    hic_data,
+    N                 = N_hic,
+    standardization_y = FALSE # raw counts: required by the count likelihoods
 )
 
 x_vars_hic <- processed_hic[["x_vars"]]
-y_hic      <- processed_hic[["y"]]
+y_hic <- processed_hic[["y"]]
 ```
 
 ### Step 4 — Run MCMC with a realistic sampler configuration
@@ -395,47 +661,69 @@ y_hic      <- processed_hic[["y"]]
 set.seed(2025)
 
 hic_results <- run_chain_betas(
-  N                = N_hic,
-  gamma_prior      = 0.3,
-  iterations       = 5000,
-  x_vars           = x_vars_hic,
-  y                = y_hic,
-  theta_start      = 0.5,
-  size_start       = c(1, 1, 1),
-  use_data_priors  = TRUE,
-  distance_metric  = "manhattan",
-  dist             = "ZINB",
-  mc_cores         = min(4L, parallel::detectCores() - 1L)
+    N                = N_hic,
+    gamma_start      = 0.3,
+    iterations       = 5000,
+    x_vars           = x_vars_hic,
+    y                = y_hic,
+    theta_start      = 0.5,
+    size_start       = c(1, 1, 1),
+    use_data_priors  = TRUE,
+    distance_metric  = "manhattan",
+    dist             = "ZINB",
+    mc_cores         = min(4L, parallel::detectCores() - 1L)
 )
 
 # run_chain_betas() returns a list with one element per input dataset.
 # Unpack the first (and here only) chain set:
 hic_chains <- hic_results[[1]][["chains"]]
-hic_gamma  <- hic_results[[1]][["gamma"]]
-hic_theta  <- hic_results[[1]][["theta"]]
-hic_size   <- hic_results[[1]][["size"]]
+hic_gamma <- hic_results[[1]][["gamma"]]
+hic_theta <- hic_results[[1]][["theta"]]
+hic_size <- hic_results[[1]][["size"]]
 ```
 
-### Step 5 — Compute posterior component probabilities
+### Step 5 — Official posterior component classification
 
 ```{r hic_probs, echo=TRUE, eval=FALSE}
-# Pass the full results list, not just the chains.
-hic_probs <- compute_HMRFHiC_probabilities(
-  data        = hic_data,
-  chain_betas = hic_results,
-  iterations  = 5000,
-  dist        = "ZINB"
-)
+# Pass the full results list, not just the coefficient matrices.
+hic_probs <- classify_hicpotts(hic_results, data = hic_data)
 
 # hic_probs is a data.frame with prob1, prob2, prob3 columns that sum to 1
 # per row. prob1 is the noise/baseline component; prob2 and prob3 are the
 # elevated-signal regimes.
 head(hic_probs[, c("start", "end", "interactions", "prob1", "prob2", "prob3")])
 
-# Bin-pairs confidently classified as elevated signal (prob2 > 0.9). This value can be increase or reduce based on user's justification.
-genuine_signal <- hic_probs[hic_probs$prob2 > 0.9,
-                            c("start", "end", "interactions", "prob2")]
+# Bin-pairs confidently classified as elevated signal (prob2 > 0.9).
+# This value can be increased or reduced based on the user's
+# justification.
+genuine_signal <- hic_probs[
+    hic_probs$prob2 > 0.9,
+    c("start", "end", "interactions", "prob2")
+]
 head(genuine_signal)
+```
+
+### Step 6 — Visualize results
+
+`plot_upper_prob_lower_count()` takes the `hic_probs` data frame and renders a
+dual-triangle heatmap. The upper triangle shows `prob2` (the elevated-signal
+component probability) and the lower triangle shows log-transformed interaction
+counts, so the fit and the data can be compared at a glance.
+
+```{r hic_plot, echo=TRUE, eval=FALSE}
+# Dual-triangle heatmap: upper = prob2 (blue), lower = log1p(count) (grey)
+hic_plot <- plot_upper_prob_lower_count(
+    results       = hic_probs,
+    bin1_col      = "start",
+    bin2_col      = "start.j.",
+    prob_col      = "prob2",
+    count_col     = "interactions",
+    chr_label     = "chr4",
+    title         = "Hi-C significant interactions – BG3 chr4 (100 kb)",
+    use_log_count = TRUE,
+    symmetric_matrix = TRUE
+)
+print(hic_plot)
 ```
 
 ## Example 2: Micro-C Data
@@ -447,7 +735,7 @@ is **identical** to Hi-C; practical differences:
 * **Input file**: typically a higher-resolution `.cool` or `.mcool`.
 * **Resolution**: 1 kb – 5 kb rather than 10 – 100 kb.
 * **Structural zeros**: even more abundant at fine resolution — ZINB strongly
-  recommended.
+    recommended.
 * **Iterations**: larger lattices need longer chains to converge.
 
 ### Step 1 — Locate input files
@@ -455,9 +743,9 @@ is **identical** to Hi-C; practical differences:
 ```{r microc_paths, echo=TRUE, eval=FALSE}
 # Replace these with the actual paths on your machine.
 microc_file <- "path/to/MicroC_BG3_chr4_1kb.cool"
-dnase_file  <- "path/to/DNaseI_BG3_gr_chr4.bedGraph"
-chain_file  <- "path/to/dm3ToDm6_chr4_only.chain"
-te_file     <- "path/to/dm6_TEs_chr4.gtf"
+dnase_file <- "path/to/DNaseI_BG3_gr_chr4.bedGraph"
+chain_file <- "path/to/dm3ToDm6_chr4_only.chain"
+te_file <- "path/to/dm6_TEs_chr4.gtf"
 ```
 
 ### Step 2 — Load Micro-C data
@@ -465,15 +753,15 @@ te_file     <- "path/to/dm6_TEs_chr4.gtf"
 ```{r microc_get_data, echo=TRUE, eval=FALSE}
 # Aggregate from the native 1 kb to 5 kb to keep the lattice manageable.
 microc_data <- get_data(
-  file_path      = microc_file,
-  chr            = "chr4",
-  start          = 1,
-  end            = 1350000,
-  resolution     = 5000,
-  genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
-  acc_wig        = dnase_file,
-  chain_file     = chain_file,
-  te_granges     = te_file
+    file_path      = microc_file,
+    chr            = "chr4",
+    start          = 1,
+    end            = 1350000,
+    resolution     = 5000,
+    genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
+    acc_wig        = dnase_file,
+    chain_file     = chain_file,
+    te_granges     = te_file
 )
 
 head(microc_data)
@@ -486,14 +774,13 @@ head(microc_data)
 N_microc <- 270
 
 processed_microc <- process_data(
-  microc_data,
-  N                 = N_microc,
-  scale_max         = 500,
-  standardization_y = TRUE
+    microc_data,
+    N                 = N_microc,
+    standardization_y = FALSE
 )
 
 x_vars_microc <- processed_microc[["x_vars"]]
-y_microc      <- processed_microc[["y"]]
+y_microc <- processed_microc[["y"]]
 ```
 
 ### Step 4 — Run MCMC
@@ -502,148 +789,417 @@ y_microc      <- processed_microc[["y"]]
 set.seed(2025)
 
 microc_results <- run_chain_betas(
-  N                = N_microc,
-  gamma_prior      = 0.3,
-  iterations       = 10000,
-  x_vars           = x_vars_microc,
-  y                = y_microc,
-  theta_start      = 0.5,
-  size_start       = c(1, 1, 1),
-  use_data_priors  = TRUE,
-  distance_metric  = "manhattan",
-  dist             = "ZINB",
-  mc_cores         = min(4L, parallel::detectCores() - 1L)
+    N                = N_microc,
+    gamma_start      = 0.3,
+    iterations       = 10000,
+    x_vars           = x_vars_microc,
+    y                = y_microc,
+    theta_start      = 0.5,
+    size_start       = c(1, 1, 1),
+    use_data_priors  = TRUE,
+    distance_metric  = "manhattan",
+    dist             = "ZINB",
+    mc_cores         = min(4L, parallel::detectCores() - 1L)
 )
 ```
 
 ### Step 5 — Posterior probabilities and classification
 
 ```{r microc_probs, echo=TRUE, eval=FALSE}
-microc_probs <- compute_HMRFHiC_probabilities(
-  data        = microc_data,
-  chain_betas = microc_results,
-  iterations  = 10000,
-  dist        = "ZINB"
-)
+microc_probs <- classify_hicpotts(microc_results, data = microc_data)
 
 # Hard component assignment: the column with the highest posterior probability.
-probs_mat    <- as.matrix(microc_probs[, c("prob1", "prob2", "prob3")])
-component    <- max.col(probs_mat, ties.method = "first")
+probs_mat <- as.matrix(microc_probs[, c("prob1", "prob2", "prob3")])
+component <- max.col(probs_mat, ties.method = "first")
 table(component)
 ```
 
-## Practical Notes on Hi-C vs. Micro-C
+### Step 6 — Visualize results
 
-| Aspect                   | Hi-C           | Micro-C        |
-|--------------------------|----------------|----------------|
-| Typical resolution       | 10 – 100 kb    | 1 – 5 kb       |
-| Lattice size `N`         | 10 – 1000      | 100 – 10000    |
-| Recommended `dist`       | ZINB or NB     | ZINB           |
-| Recommended `iterations` | 2000 – 5000    | 5000 – 20000   |
-| `mc_cores`               | 2 – 4          | 4 – 8          |
+At fine resolution the heatmap is particularly useful for spotting local
+clusters of high-probability interactions against the backdrop of raw counts.
 
-The same `get_data() → process_data() → run_chain_betas() → compute_HMRFHiC_probabilities()`
-pipeline applies to both; only the argument values and compute budget change.
-
-
+```{r microc_plot, echo=TRUE, eval=FALSE}
+# Dual-triangle heatmap: upper = prob2 (blue), lower = log1p(count) (grey)
+microc_plot <- plot_upper_prob_lower_count(
+    results       = microc_probs,
+    bin1_col      = "start",
+    bin2_col      = "start.j.",
+    prob_col      = "prob2",
+    count_col     = "interactions",
+    chr_label     = "chr4",
+    title         = "Micro-C significant interactions – BG3 chr4 (5 kb)",
+    use_log_count = TRUE,
+    symmetric_matrix = TRUE
+)
+print(microc_plot)
+```
 
 # Advanced Usage
 
+`run_chain_betas()` is the public fitting interface. The examples in this
+section use four independently seeded chains and the robust workflow so that
+split-R-hat, effective sample size, component occupancy and allocation
+diagnostics can be evaluated together.
+
+There are two distinct prior workflows:
+
+* With `use_data_priors = TRUE`, the robust workflow first runs a short
+    multi-chain pilot, pools the pilot information into one empirical-Bayes
+    prior, and freezes that prior for all production chains. A message such as
+    `Running 4 shared-prior pilot chains for 5000 pilot iterations; production
+    will then run up to 20000 requested iterations per chain.` is therefore
+    expected only in this workflow. Pilot draws are not included in posterior
+    summaries.
+* With `use_data_priors = FALSE`, no empirical-Bayes pilot is needed. A
+    supplied `user_fixed_priors` object is shared unchanged by every production
+    chain. Consequently, the shared-pilot message is not printed. With
+    `robust = TRUE` and `user_fixed_priors = NULL`, HiCPotts constructs fixed,
+    covariate-scale-aware priors instead.
+
 ## Custom Priors
 
-To use user-specified priors instead of data-driven priors:
-```{r User_prior, include=FALSE, eval=TRUE}
-user_priors <- list(
-  list(mean = c(0, 0, 0, 0, 0), sd = c(1, 1, 1, 1, 1)),
-  list(mean = c(0, 0, 0, 0, 0), sd = c(1, 1, 1, 1, 1)),
-  list(mean = c(0, 0, 0, 0, 0), sd = c(1, 1, 1, 1, 1))
+`user_fixed_priors` must be a named list containing `component1`, `component2`
+and `component3`. Each component contains the prior mean and standard deviation
+for the intercept and the four regression coefficients. The mapping is:
+
+**`meany`, `sdy`**
+
+intercept
+
+**`meanx1`, `sdx1`**
+
+genomic distance
+
+**`meanx2`, `sdx2`**
+
+GC content
+
+**`meanx3`, `sdx3`**
+
+transposable-element count
+
+**`meanx4`, `sdx4`**
+
+accessibility
+
+
+All standard deviations must be finite and strictly positive. Values are on
+the fitted coefficient scale (`log1p` covariates, without rewriting the
+reported coefficients onto a standardized scale). Prior values should be
+chosen from scientific knowledge or a justified external analysis; the broad
+values below are only a template.
+
+```{r fixed_priors, echo=TRUE, eval=FALSE}
+# Extract the one-dataset matrices returned by process_data().
+y_matrix <- processed[["y"]][[1L]]
+x_matrices <- lapply(processed[["x_vars"]], function(x) x[[1L]])
+
+base_component_prior <- list(
+    meany = 0,
+    meanx1 = 0, meanx2 = 0, meanx3 = 0, meanx4 = 0,
+    sdy = 5,
+    sdx1 = 1, sdx2 = 1, sdx3 = 1, sdx4 = 1
 )
 
-# Run MCMC
-results <- run_chain_betas(
-  N = N,
-  gamma_prior = gamma_prior,
-  iterations = iterations,
-  x_vars = x_vars,
-  y = y,
-  theta_start = theta_start,
-  # use_data_priors = TRUE,
-  user_fixed_priors = user_priors,
-  # epsilon = NULL,
-  distance_metric = "manhattan",
-  dist = dist,
-  # size_start = size_start,
-  mc_cores = 1
+user_priors <- list(
+    component1 = base_component_prior,
+    component2 = base_component_prior,
+    component3 = base_component_prior
+)
+
+# Components can have different priors. For example:
+user_priors$component2$meany <- 1
+user_priors$component2$sdy <- 2
+
+fit_args <- list(
+    N = nrow(y_matrix),
+    x_vars = x_matrices,
+    y = y_matrix,
+    dist = "ZINB",
+    gamma_start = 0.3,
+    gamma_prior_shape = c(1, 1),
+    iterations = 20000L,
+    burnin = 5000L,
+    n_chains = 4L,
+    seeds = c(101L, 202L, 303L, 404L),
+    robust = TRUE,
+    initialization = "auto",
+    use_data_priors = FALSE,
+    user_fixed_priors = user_priors,
+    theta_start = 0.05,
+    size_start = rep(11, 3L),
+    mcse_stop = FALSE,
+    mc_cores = 4L,
+    verbose = TRUE,
+    progress_interval = 1000L
+)
+
+fit <- do.call(run_chain_betas, fit_args)
+```
+
+`gamma_start` is the initial Potts parameter value. It is not the prior on
+gamma; `gamma_prior_shape = c(a, b)` supplies the two shape parameters of its
+Beta prior. Setting `mcse_stop = FALSE` forces every production chain to run
+the requested 20,000 iterations. When `mcse_stop = TRUE`, `iterations` is a
+maximum and a chain may stop after satisfying the configured MCSE rule.
+
+## Independent Chains and Parallel Processing
+
+`n_chains` controls how many independently seeded chains are fitted for each
+dataset. `mc_cores` controls how many of those chains can run concurrently; it
+does not change the number of chains or the posterior target. Four or more
+chains are recommended when convergence will be assessed. Reproducible seeds
+should be supplied explicitly.
+
+```{r parallel_chains, echo=TRUE, eval=FALSE}
+fit <- run_chain_betas(
+    N = nrow(y_matrix),
+    x_vars = x_matrices,
+    y = y_matrix,
+    dist = "ZIP",
+    gamma_start = 0.3,
+    theta_start = 0.05,
+    iterations = 20000L,
+    burnin = 5000L,
+    n_chains = 4L,
+    seeds = c(101L, 202L, 303L, 404L),
+    robust = TRUE,
+    initialization = "auto",
+    use_data_priors = TRUE,
+    mc_cores = 4L
 )
 ```
 
-## Parallel Processing
+For one dataset, `y` can be a matrix and each `x_vars` entry can be a matrix.
+For several datasets, `y` must be a list of count matrices and every named
+covariate entry must be a list with one matrix per dataset. All matrices must
+be square, finite, and use the same `N`. The distribution is common to all
+datasets in one call. A supplied fixed-prior object is also reused for every
+dataset; fit datasets separately if they require different fixed priors.
 
-For multiple Hi-C matrices, use mc_cores to parallelize:
+```{r multiple_matrices, echo=TRUE, eval=FALSE}
+y_many <- list(sample_A = y_A, sample_B = y_B)
+x_many <- list(
+    distance = list(distance_A, distance_B),
+    GC = list(GC_A, GC_B),
+    TES = list(TES_A, TES_B),
+    ACC = list(ACC_A, ACC_B)
+)
 
-```{r multiple_matrices, include=FALSE, eval=FALSE}
-y_list <- list(y, y) # Example with two matrices
-
-results <- run_chain_betas(
-  N = N,
-  gamma_prior = gamma_prior,
-  iterations = iterations,
-  x_vars = x_vars,
-  y = y_list,
-  theta_start = theta_start,
-  size_start = size_start,
-  use_data_priors = TRUE,
-  user_fixed_priors = NULL,
-  epsilon = NULL,
-  distance_metric = "manhattan",
-  dist = dist,
-  mc_cores = 2
+fits_many <- run_chain_betas(
+    N = N,
+    x_vars = x_many,
+    y = y_many,
+    dist = "NB",
+    gamma_start = 0.3,
+    size_start = rep(11, 3L),
+    iterations = 20000L,
+    burnin = 5000L,
+    n_chains = 4L,
+    seeds = c(101L, 202L, 303L, 404L),
+    robust = TRUE,
+    use_data_priors = TRUE,
+    mc_cores = 4L
 )
 ```
 
 ## Other Distributions
 
-The package supports Poisson, NB, ZIP, and ZINB distributions. 
-For example, to use Poisson:
+The count family controls how sampling variation, over-dispersion and excess
+zeros are modelled. It does not change the three biological component labels.
 
-```{r Additional_distributions, include=FALSE, eval=TRUE}
-# Run MCMC
-results <- run_chain_betas(
-  N = N,
-  gamma_prior = gamma_prior,
-  iterations = iterations,
-  x_vars = x_vars,
-  y = y,
-  theta_start = theta_start,
-  # use_data_priors = TRUE,
-  user_fixed_priors = user_priors,
-  # epsilon = NULL,
-  distance_metric = "manhattan",
-  dist = "Poisson",
-  # size_start = size_start,
-  mc_cores = 1
+**`"Poisson"`**
+
+Default: `equidispersed counts`. none
+
+**`"NB"`**
+
+Default: `over-dispersed counts`. `size_start`, length three
+
+**`"ZIP"`**
+
+Default: `Poisson counts with excess zeros`. `theta_start`
+
+**`"ZINB"`**
+
+Default: `over-dispersed counts with excess zeros`. both
+
+
+Use posterior-predictive checks and convergence diagnostics to compare
+families. Do not choose a family solely because it produces more interactions
+in one latent class.
+
+```{r all_distributions, echo=TRUE, eval=FALSE}
+fit_one_family <- function(family) {
+    args <- list(
+        N = nrow(y_matrix),
+        x_vars = x_matrices,
+        y = y_matrix,
+        dist = family,
+        gamma_start = 0.3,
+        iterations = 20000L,
+        burnin = 5000L,
+        n_chains = 4L,
+        seeds = c(101L, 202L, 303L, 404L),
+        robust = TRUE,
+        use_data_priors = FALSE,
+        user_fixed_priors = user_priors,
+        mcse_stop = FALSE,
+        mc_cores = 4L
+    )
+    if (family %in% c("ZIP", "ZINB")) args$theta_start <- 0.05
+    if (family %in% c("NB", "ZINB")) args$size_start <- rep(11, 3L)
+    do.call(run_chain_betas, args)
+}
+
+fits_by_family <- setNames(
+    lapply(c("Poisson", "NB", "ZIP", "ZINB"), fit_one_family),
+    c("Poisson", "NB", "ZIP", "ZINB")
+)
+```
+
+## Sampler Accuracy and Runtime Controls
+
+The ABC update for the Potts parameter is usually the dominant cost on large
+lattices. The following controls are exposed by `run_chain_betas()`:
+
+* `abc_potts_sweeps = 0L` selects the lattice-dependent default. Supplying a
+    smaller positive value is faster but may under-equilibrate auxiliary Potts
+    fields and bias spatial coupling upward.
+* `abc_sim_reps` is the number of auxiliary fields averaged per gamma proposal.
+    More replicates reduce decision noise and increase cost approximately
+    linearly.
+* `gamma_update_interval` is the number of MCMC iterations between gamma
+    proposals. Larger values are cheaper but yield fewer gamma transitions.
+* `epsilon = NULL` calibrates one ABC bandwidth and shares it across production
+    chains. A fixed positive value is appropriate only when it has been
+    justified
+    for the lattice and summary statistic.
+* `mcse_min_iterations`, `mcse_check_interval` and
+    `mcse_relative_threshold` configure optional early stopping. Use
+    `mcse_stop = FALSE` when an exact iteration count is required.
+
+These parameters trade computation for Monte Carlo accuracy. Any non-default
+choice should be recorded and followed by checks of gamma movement, ESS,
+split-R-hat and allocation uncertainty.
+
+## Diagnostics and Parameter Summaries
+
+The robust result records both selected chains and reliability flags. Run the
+official classification before attaching probability diagnostics, then inspect
+the gates before reporting parameters.
+
+```{r advanced_diagnostics, echo=TRUE, eval=FALSE}
+classification <- classify_hicpotts(
+    fit,
+    data = data,
+    min_draws = 100L,
+    reflect = "auto"
+)
+
+diagnostics <- diagnose_hicpotts_fit(
+    fit,
+    prob_result = classification
+)
+
+allocation <- allocation_diagnostics(fit)
+
+# Apply the configured parameter-reporting criteria.
+parameter_summary <- summarise_hicpotts_parameters(
+    fit,
+    x_vars = x_matrices,
+    require_reliable = TRUE
+)
+
+# Return the table together with row-level diagnostic indicators.
+diagnostic_summary <- summarise_hicpotts_parameters(
+    fit,
+    x_vars = x_matrices,
+    require_reliable = FALSE
+)
+
+ppc <- posterior_predictive_hicpotts(
+    fit,
+    x_vars = x_matrices,
+    y = y_matrix,
+    dist = "ZINB",
+    n_rep = 100L,
+    seed = 1L
+)
+```
+
+The diagnostic table records each criterion separately, so the result can be
+read alongside the specified thresholds, retained chain length and trace
+plots. Report these settings and the corresponding ESS/R-hat values with
+parameter estimates.
+
+## Symmetric and Ordered Matrices
+
+For mirrored or triangular Hi-C input, use `symmetric_matrix = TRUE`. The plot
+then uses one representative of each unordered bin pair: the visually upper
+triangle shows the requested posterior probability and the visually lower
+triangle, including the diagonal, shows observed counts. This intentionally
+produces a dual-triangle display rather than mirroring the same quantity into
+both halves.
+
+Use `symmetric_matrix = FALSE` only when `(bin1, bin2)` and `(bin2, bin1)` are
+meaningfully different ordered observations. In that mode no mirror-based
+deduplication is performed.
+
+```{r advanced_symmetric_plot, echo=TRUE, eval=FALSE}
+plot_upper_prob_lower_count(
+    results = classification,
+    bin1_col = "start",
+    bin2_col = "start.j.",
+    prob_col = "prob2",
+    count_col = "interactions",
+    symmetric_matrix = TRUE,
+    use_log_count = TRUE,
+    chr_label = "chr4",
+    title = "Signal probability and observed counts"
 )
 ```
 
 # Technical Notes
 
-Performance: The following functions, `pz_123()`, `run_metropolis_MCMC_betas()`, and `Neighbours_combined()`, are implemented in C++ using Rcpp and RcppArmadillo for efficiency, crucial for large Hi-C matrices.
+Performance: The allocation, Potts-neighbour and MCMC kernels are implemented
+internally in C++ using Rcpp and RcppArmadillo. Users call `run_chain_betas()`
+and choose `n_chains` and `mc_cores`; native kernels and validation helpers are
+intentionally not exported.
 
-Utility Functions: The following functions, `proposaldensity_combined()`, `likelihood_gamma()`, `gamma_prior_value()`, `posterior_combined()`, `prior_combined()`, `likelihood_combined()`, `proposalfunction()`, and `size_prior()`, support the MCMC process and are typically not called directly by users.
+Visualization: `plot_upper_prob_lower_count()` creates a dual-triangle Hi-C
+heatmap from the data frame returned by `classify_hicpotts()`. It requires the
+`ggplot2` (>= 3.5.0) and `ggnewscale` packages, both of which are listed as
+dependencies of HiCPotts. The `prob_col` argument selects which probability
+column to display in the upper triangle (default `"prob2"`); `use_log_count`
+controls whether raw or `log1p`-transformed counts appear in the lower triangle.
+The `bin1_col` and `bin2_col` arguments should name the columns holding the
+genomic start positions of the two interacting bins — typically `"start"` and
+`"start.j."` in `get_data()` output.
 
 # Conclusion
 
-The HiCPotts package offers a powerful tool for Bayesian analysis of Hi-C data, integrating spatial dependencies, information from sources of bias associated with Hi-C data, and flexible mixture models. This page covered the core workflow, but the package’s functions can be customized for specific research needs, such as different genomic regions or distribution assumptions.
+The HiCPotts package offers a powerful tool for Bayesian analysis of Hi-C data,
+integrating spatial dependencies, information from sources of bias associated
+with Hi-C data, and flexible mixture models. This page covered the core
+workflow, but the package’s functions can be customized for specific research
+needs, such as different genomic regions or distribution assumptions.
 
-Users trying to bring in extra covariates; beyond genomic distance, GC content, ACC-score and TEs, can do so by classifying each new factor according to how it relates to those four (for example, as a distance-like term, a sequence-composition term, or an interaction‐score term) 
-and then inputting it into the same model framework.
-Also, the package currently supports only intrachromosomal analyses. In the future, we plan to extend to interchromosomal contacts.
+Users trying to bring in extra covariates; beyond genomic distance, GC content,
+ACC-score and TEs, can do so by classifying each new factor according to how it
+relates to those four (for example, as a distance-like term, a
+sequence-composition term, or an interaction‐score term) and then inputting it
+into the same model framework. Also, the package currently supports only
+intrachromosomal analyses. In the future, we plan to extend to interchromosomal
+contacts.
 
 
-For further details, consult the package documentation (`?HiCPotts`) or contact the package maintainers. We hope HiCPotts facilitates your genomic research!
+For further details, consult the package documentation (`?HiCPotts`) or contact
+the package maintainers. We hope HiCPotts facilitates your genomic research!
 
 
 
-```{r, echo = FALSE}
+```{r session_info, echo = FALSE}
 sessionInfo()
 ```

@@ -1,32 +1,72 @@
 Package: HiCPotts
-Type: Package
-Title: HiCPotts: Hierarchical Modeling to Identify and Correct Genomic
-        Biases in Hi-C
-Version: 1.3.0
-Authors@R: c(person(given = "Itunu. Godwin", family = "Osuntoki", email = "hitunes4@gmail.com", role = c("aut", "cre"), 
+Title: Hierarchical Modeling to Identify and Correct Genomic Biases in
+    Hi-C
+Version: 1.3.1
+Date: 2026-09-06
+Authors@R: c(
+    person(given = "Itunu. Godwin", family = "Osuntoki",
+           email = "hitunes4@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0005-1037-9346")),
-           person(given = "Nicolae. Radu", family = "Zabet", email = "r.zabet@qmul.ac.uk", role = "aut"))
-Description: The HiCPotts package provides a comprehensive Bayesian framework for analyzing Hi-C interaction data, integrating both spatial and genomic biases within a probabilistic modeling framework. At its core, HiCPotts leverages the Potts model (Wu, 1982)—a well-established graphical model—to capture and quantify spatial dependencies across interaction loci arranged on a genomic lattice. By treating each interaction as a spatially correlated random variable, the Potts model enables robust segmentation of the genomic landscape into meaningful components, such as noise, true signals, and false signals. To model the influence of various genomic biases, HiCPotts employs a regression-based approach incorporating multiple covariates: Genomic distance (D): The distance between interacting loci, recognized as a fundamental driver of contact frequency. GC-content (GC): The local GC composition around the interacting loci, which can influence chromatin structure and interaction patterns. Transposable elements (TEs): The presence and abundance of repetitive elements that may shape contact probability through chromatin organization. Accessibility score (Acc): A measure of chromatin openness, informing how accessible certain genomic regions are to interaction. By embedding these covariates into a hierarchical mixture model, HiCPotts characterizes each interaction’s probability of belonging to one of several latent components. The model parameters, including regression coefficients, zero-inflation parameters (for ZIP/ZINB distributions), and dispersion terms (for NB/ZINB distributions), are inferred via a MCMC sampler. This algorithm draws samples from the joint posterior distribution, allowing for flexible posterior inference on model parameters and hidden states. From these posterior samples, HiCPotts computes posterior means of regression parameters and other quantities of interest. These posterior estimates are then used to calculate the posterior probabilities that assign each interaction to a specific component. The resulting classification sheds light on the underlying structure: distinguishing genuine high-confidence interactions (signal) from background noise and potential false signals, while simultaneously quantifying the impact of genomic biases on observed interaction frequencies. In summary, HiCPotts seamlessly integrates spatial modeling, bias correction, and probabilistic classification into a unified Bayesian inference framework. It provides rich posterior summaries and interpretable, model-based assignments of interaction states, enabling researchers to better understand the interplay between genomic organization, biases, and spatial correlation in Hi-C data.
+    person(given = "Nicolae. Radu", family = "Zabet",
+           email = "r.zabet@qmul.ac.uk", role = "aut"))
+Description: Bayesian analysis of Hi-C interaction counts using a
+    three-state hierarchical mixture model with Potts spatial dependence
+    and genomic distance, GC-content, transposable-element and
+    accessibility covariates. The three biological components are
+    low-mean noise, true signal with a distinct covariate-response
+    pattern, and elevated false signal whose covariate-response slopes
+    resemble the noise component. Robust regression fitting uses a
+    multi-chain soft empirical-Bayes pilot to construct one shared prior
+    that is frozen for all production chains, dispersion uses
+    component-group-specific Gamma priors,
+    zero inflation uses a conjugate augmented Gibbs step, and spatial
+    coupling uses retained-state approximate Bayesian computation. The
+    official classification pools post-burn-in latent-state frequencies
+    from the fitted model; parameter-plus-Potts allocation is retained
+    as a separate sensitivity analysis. Parameter summaries include
+    posterior intervals, effective sample sizes and split-chain R-hat,
+    with configurable diagnostic criteria for reporting. Cached
+    native likelihood calculations, direct checkerboard allocation,
+    reproducible cross-platform parallel chains, fit provenance and
+    stage timings improve computational efficiency and auditability
+    without changing the model target or official classification rule.
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
-Imports: Rcpp(>= 0.11.0), parallel, stats, Biostrings, GenomicRanges,
-        rtracklayer, rhdf5,IRanges, S4Vectors
-LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.3.3
-NeedsCompilation: yes
-Packaged: 2025-08-12 16:47:07 UTC; hitun
-Suggests: BiocStyle, knitr (>= 1.30), rmarkdown (>= 2.10), ggplot2 (>=
-        3.5.0), reshape2 (>= 1.4.4), testthat (>= 3.0.0), BiocManager,
-        BSgenome.Dmelanogaster.UCSC.dm6, BSgenome
-Config/testthat/edition: 3
-Depends: R (>= 4.5)
-VignetteBuilder: knitr
-biocViews: StatisticalMethod, FunctionalGenomics, GenomeAnnotation,
-        GenomeWideAssociation, PeakDetection, DataImport, Spatial,
-        Bayesian, Classification, HiddenMarkovModel, Regression
 URL: https://github.com/igosungithub/HiCPotts
 BugReports: https://github.com/igosungithub/HiCPotts/issues
-Author: Itunu. Godwin Osuntoki [aut, cre] (ORCID:
-    <https://orcid.org/0009-0005-1037-9346>),
-  Nicolae. Radu Zabet [aut]
-Maintainer: Itunu. Godwin Osuntoki <hitunes4@gmail.com>
+biocViews: StatisticalMethod, FunctionalGenomics, GenomeAnnotation,
+    GenomeWideAssociation, PeakDetection, DataImport, Spatial,
+    Bayesian, Classification, HiddenMarkovModel, Regression
+Depends:
+    R (>= 4.5)
+Imports:
+    Rcpp (>= 0.11.0),
+    Biostrings,
+    GenomicRanges,
+    IRanges,
+    S4Vectors,
+    ggnewscale,
+    parallel,
+    rhdf5,
+    rlang,
+    rtracklayer,
+    stats,
+    withr
+Suggests:
+    BSgenome,
+    BSgenome.Dmelanogaster.UCSC.dm6,
+    BiocManager,
+    BiocStyle,
+    ggplot2 (>= 3.5.0),
+    knitr (>= 1.30),
+    reshape2 (>= 1.4.4),
+    rmarkdown (>= 2.10),
+    testthat (>= 3.0.0)
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+NeedsCompilation: yes
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

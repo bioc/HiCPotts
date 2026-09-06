@@ -15,6 +15,7 @@ make_fake_chains <- function(n_iter, value_per_comp_per_col) {
 test_that("probabilities sum to 1 per row", {
   dat <- data.frame(
     start        = c(1, 100, 500),
+    start.j.     = c(50, 200, 800),
     end          = c(50, 200, 800),
     interactions = c(3, 5, 7),
     GC           = c(0.4, 0.5, 0.6),
@@ -31,14 +32,13 @@ test_that("probabilities sum to 1 per row", {
   res <- compute_HMRFHiC_probabilities(dat,
                                        chain_betas = make_fake_chains(n_iter, vals),
                                        iterations  = n_iter,
-                                       dist        = "Poisson")
+                                       dist        = "Poisson", relabel = FALSE)
   expect_equal(rowSums(res[, c("prob1","prob2","prob3")]), rep(1, nrow(dat)),
                tolerance = 1e-10)
+  expect_identical(res$start.j., dat$start.j.)
 })
 
-test_that("max_interactions defaults to no cap (regression test)", {
-  ## Previously the function silently capped at 500. Make sure that default
-  ## no longer kicks in.
+test_that("max_interactions defaults to no cap", {
   dat <- data.frame(
     start        = 1,
     end          = 100,
@@ -51,7 +51,7 @@ test_that("max_interactions defaults to no cap (regression test)", {
   res <- compute_HMRFHiC_probabilities(dat,
                                        chain_betas = make_fake_chains(10, vals),
                                        iterations  = 10,
-                                       dist        = "Poisson")
+                                       dist        = "Poisson", relabel = FALSE)
   expect_equal(res$interactions, 1000)       # still 1000 in the returned df
 })
 
@@ -70,7 +70,8 @@ test_that("Explicit max_interactions still truncates (backwards compat)", {
     chain_betas      = make_fake_chains(10, vals),
     iterations       = 10,
     dist             = "Poisson",
-    max_interactions = 500L
+    max_interactions = 500L,
+    relabel = TRUE
   )
   expect_equal(res$interactions, 1000)       # data value preserved...
   ## ...but density was evaluated at 500, so probs are still on [0,1]
@@ -86,18 +87,18 @@ test_that("Missing required columns raises informative error", {
 })
 
 test_that("iterations = 4 (small) still works with proper integer burn-in", {
-  ## Old code computed burnin as iterations/2, i.e. 2.5 for odd iterations,
-  ## producing fractional matrix indices. Regression test for fix.
+  ## Guards against a non-integer burn-in (e.g. iterations/2 for odd
+  ## iteration counts), which would produce fractional matrix indices.
   dat <- data.frame(start = 1:3, end = 11:13,
                     interactions = c(3,5,7),
                     GC = c(.2,.4,.6), TES = 1:3, ACC = c(.1,.5,.9))
   vals <- matrix(0, 3, 5)
-  expect_silent(compute_HMRFHiC_probabilities(
+  expect_warning(compute_HMRFHiC_probabilities(
     dat, chain_betas = make_fake_chains(4, vals),
-    iterations = 4, dist = "Poisson"
-  ))
-  expect_silent(compute_HMRFHiC_probabilities(
+    iterations = 4, dist = "Poisson", relabel = TRUE
+  ), "N.*not supplied")
+  expect_warning(compute_HMRFHiC_probabilities(
     dat, chain_betas = make_fake_chains(5, vals),
-    iterations = 5, dist = "Poisson"        # odd
-  ))
+    iterations = 5, dist = "Poisson", relabel = TRUE        # odd
+  ), "N.*not supplied")
 })

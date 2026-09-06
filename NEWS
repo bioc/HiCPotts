@@ -1,96 +1,142 @@
-Changes in version 1.1.1 (2026-04-21)
+Changes in version 1.3.1 (2026-09-06)
+=====================================
 
-All changes involve improving, tidying and simplifying the codes and removing bugs.
-It also makes it easier for non-statisticians to understand.
+* Parameter documentation and diagnostic messages describe individual
+  criteria and thresholds. The fitted model and diagnostic calculations
+  are unchanged.
 
-* run_metropolis_MCMC_betas() is now defined ONLY in R/RcppExports.R
-  (plus its C++ backend). The duplicate R version in R/MCMC_chain.R
-  has been deleted; it referenced an undefined mc_cores variable and
-  used the wrong PACKAGE = "HMRFHiC" tag. Same for pz_123() in the
-  now-deleted R/potts_posterior.R.
+* The function reference now runs a small worked analysis during vignette
+  builds and includes session information. Argument descriptions are
+  formatted for readability in both source and rendered documentation.
 
-* likelihood_combined() for components 2 and 3 more simplified and efficient to evaluates the density
-  on EVERY observation in the component. This makes it easier for non-statisticians to understand
-  
-* ZIP/ZINB zero-probability is now log(theta + (1-theta) * exp(-mu))
-  where mu = exp(eta) is the Poisson/NB mean. 1.0.0 used exp(-eta). Changed in both R/likelihood.R and
-  src/potts_posterior.cpp.
-  
-* Neighbours_combined() (C++) rewritten to simplify the comparing of the
-  reference configuration (current state or proposed state) to each of
-  the four shifted copies of the current state.
-  
-* run_metropolis_MCMC_betas() ABC step for gamma uses the PROPOSED
-  gamma to simulate synthetic data. 1.0.0 used chain_gamma[iter]. This helps to 
-  improve the accept/reject step.
-  
-* The ABC tolerance epsilon and the distance statistic are now on the
-  same scale: mean |y - synthetic| (or RMS for distance_metric =
-  "euclidean"), and epsilon defaults to the 10% quantile of per-cell
-  |y - synthetic|. 1.0.0 compared a mean-difference distance against
-  the 20% quantile of exp(|y - synthetic|).
-  
-* The Metropolis-Hastings ratio for the regression coefficients no
-  longer includes a proposaldensity_combined() term. The proposal is
-  a symmetric Gaussian random walk, for which the proposal-density
-  ratio cancels. 
-  
-* prior_combined() is now more DETERMINISTIC given the same parameters,
-  data, and component assignments. 1.0.0 called rnorm() and rgamma()
-  inside the prior, so pi(theta) changed between calls and the MH
-  acceptance ratio was stochastic.
+* No model changes: the three-component likelihood, Potts formulation,
+  posterior target and official classification rule are unchanged.
 
-* compute_HMRFHiC_probabilities() no longer caps interactions
-  at 500. The previous behaviour is available via max_interactions =
-  500L. burnin is now an integer that includes the last MCMC sample
-  (fixes fractional-index warnings when iterations is odd).
+* Faster computation: cached native likelihood evaluations, direct
+  checkerboard allocation updates, shared ABC calibration and optional
+  parallel execution of independent chains.
 
-* A new consistent_dist = TRUE default in compute_HMRFHiC_probabilities()
-  uses the same emission distribution for all three components. Pass
-  consistent_dist = FALSE for the previous 1.0.0 behaviour (ZIP/ZINB
-  only for component 1, others reduced to Poisson/NB).
+* Regression proposals now retain the tuned QR-whitened random-walk kernel
+  through burn-in and report ordinary beta acceptance separately from label
+  swaps, preventing a rejected replacement proposal from freezing a chain.
 
-* compute_HMRFHiC_probabilities() now uses log-sum-exp normalisation,
-  avoiding underflow for very small component densities.
-  
-  
-* On Windows, mc_cores > 1 now emits a warning and falls back to 1
-  (parallel::mclapply does not fork on Windows).
+* Robust empirical-Bayes fitting now uses a short multi-chain pilot to build
+  one shared frozen prior for all production chains, so split-R-hat compares
+  chains with the same posterior target.
 
-* get_data() now raises an informative error when passed a .hic file
-  (these are not HDF5 and were failing silently inside h5ls).
+* diagnose_hicpotts_fit() no longer returns an overall verdict. The
+  allocation_reliable, parameter_reliable, gamma_reliable, reliable and
+  reliability_by_domain fields are removed: one flag collapsed twelve
+  independent criteria into a single word, so a marginal result on any one
+  gate read as a blanket failure. reliability_flags, holding one row per
+  gate with its threshold, is the reported result.
 
-* The slice-rebin path in get_data() now aggregates duplicate entries
-  produced by splitting a larger native bin into smaller target bins,
-  instead of silently keeping only the last.
+* summarise_hicpotts_parameters() now judges the estimates it is about to
+  report instead of requiring every gate to pass. require_reliable = TRUE
+  rejects a summary only when a precondition leaves the estimates
+  ill-defined -- chains on different posterior targets, an unmoved
+  regression block, unaligned components, mixed coefficient scales or
+  ill-conditioned covariates -- or when a reported parameter falls short of
+  the requested effective sample size or exceeds the R-hat tolerance.
+  Gamma near a boundary, low occupancy and fewer chains than recommended no
+  longer block the table; they remain visible in reliability_flags. The
+  returned table gains a resolved column marking which rows met the
+  criteria.
 
-* posterior_combined() now calls likelihood_combined() with named
-  arguments, eliminating positional fragility.
+* diagnose_hicpotts_fit() now reports classification_entropy for every fit.
+  It previously stayed NA unless prob_result was supplied; the sampler's
+  own pooled latent-state frequencies are used when it is not.
 
-* process_data() now defaults to standardization_y = FALSE. When
-  scaling is requested, it emits a warning because min-max rescaling
-  of count data breaks the count-regression assumption.
+* Poisson and NB fits are no longer rejected by the effective sample size
+  and split R-hat gates. theta was monitored even for families without zero
+  inflation, where it is carried at its starting value and never updated,
+  so its non-finite ESS and R-hat failed both gates however well the chains
+  had converged. theta is now monitored only for ZIP and ZINB, as size
+  already was.
 
-PACKAGE METADATA
+* get_data() reads .cool and .h5 contact matrices substantially faster. Bin
+  coordinates are now attached by index, and pixels are restricted to the
+  requested chromosome before the join, instead of merging the whole pixel
+  table twice. The returned data frame is unchanged.
 
-* BSgenome.Dmelanogaster.UCSC.dm6 moved from Imports to Suggests.
-  Installing HiCPotts no longer forces users of other species to
-  download the Drosophila genome.
+* process_data() gains a mirror argument. Hi-C contact maps are symmetric,
+  so a half matrix holding one triangle can be completed by reflection
+  rather than zero padding, which would invent roughly as many
+  observations as were supplied. The block-size error now also recognises
+  a triangular row count and names the lattice dimension implied by the
+  distinct bins, instead of only reporting a failed modulus.
 
-* strawr removed from Imports (it was never called). Added to
-  Suggests for users wanting to handle raw .hic files themselves.
+* combine_hicpotts_blocks() now creates a reusable block-aware fit. Each
+  submatrix keeps the chains selected by its own mode screen; downstream
+  classification, parameter summaries, diagnostics and posterior-predictive
+  checks run per block without pooling unrelated MCMC draws. Cell-level output
+  gains block and global indices. A single fit passes through unchanged.
 
-* DESCRIPTION license tag (GPL-3), README badge (MIT), and documented
-  R version (>= 4.2) reconciled: GPL-3 and R (>= 4.5) are now the
-  package's authoritative values.
+* summarise_hicpotts_parameters() can now produce an optional descriptive
+  posterior summary across independently fitted blocks. Regression and
+  dispersion draws use posterior expected component occupancy weights, while
+  gamma and theta use analysed-cell weights. Empirical credible intervals,
+  between-block heterogeneity, contributing blocks and exclusions are reported;
+  the result is explicitly distinguished from a joint shared-parameter fit.
 
-* Vignette updated: correct function name (get_data, not
-  prepare_data); user_fixed_priors example restructured with correct field names;
-  ZIP/ZINB chunk consistency fixed.
+* Code improvements: clearer organisation, stricter input validation and
+  reproducible cross-platform random number streams.
 
+* plot_upper_prob_lower_count() now retains the intended reversed genomic
+  y-axis without replacing it with a second scale.
 
-TESTING
+* plot_upper_prob_lower_count() gains a symmetric_matrix argument. Symmetric
+  full matrices are checked for equal mirrored counts, triangular inputs are
+  reflected, and ordered matrices can be plotted without combining directions.
 
-* tests/testthat replaced with a suite that verifies numerical
-  correctness (closed-form Poisson/NB/ZIP densities, hand-computed
-  neighbour counts, and regression tests for every fix above).
+* Shared-prior progress output now distinguishes the short pilot length from
+  the user-requested production iterations.
+
+* Likelihood-informed initialisation now skips a numerically unstable candidate
+  partition, and starting allocations are prepared before parallel dispatch so
+  serial and Windows PSOCK runs use the same deterministic initialisation path.
+
+* New exported functions: classify_hicpotts(),
+  summarise_hicpotts_parameters(), allocation_diagnostics(),
+  posterior_predictive_hicpotts() and diagnose_hicpotts_fit().
+
+* Simplified interface: fitting is consolidated in run_chain_betas(); low-level
+  sampler, validation and simulation helpers are now internal.
+
+* run_chain_betas() now exposes the controls users need for chain
+  initialisation, progress reporting, MCSE stopping, ABC workload, gamma-update
+  frequency, gamma-prior sensitivity and robust diagnostic thresholds. The
+  component-defining priors and low-level reversible-move settings remain
+  internal, and all fitting defaults are unchanged.
+
+* The gamma starting value is now named gamma_start. The previous
+  gamma_prior argument remains as a deprecated compatibility alias. The actual
+  Beta prior is controlled separately by gamma_prior_shape.
+
+* abc_potts_sweeps, abc_sim_reps and gamma_update_interval expose the main ABC
+  computation controls. The default sweep count grows with N^2, so the ABC
+  step scales as N^4; users can deliberately trade auxiliary-simulation effort
+  for speed without changing the package defaults.
+
+* The sampler no longer warns per chain about low component occupancy. The
+  counts are still returned on the allocation field and are checked by the
+  occupancy gate in diagnose_hicpotts_fit().
+
+* The default minimum-component occupancy threshold is now zero. Empty
+  components are permitted by the reliability gate, while their observed and
+  posterior-expected occupancy counts remain available in diagnostics.
+
+* Fitted objects now carry provenance, chain settings, stage timings and
+  reliability metadata.
+
+* Documentation updates: runnable examples for all exported functions, a
+  new vignette section on checking a fit before reporting parameters, and a
+  full description of every reliability gate on diagnose_hicpotts_fit().
+  Internal functions that appear in an exported signature or in help-page
+  prose are now explained where users meet them, including the canonical
+  component definition used as a default by classify_hicpotts() and
+  compute_HMRFHiC_probabilities(), and how covariate_diagnostics is
+  obtained.
+
+* Roxygen markdown is enabled, so inline code in the help pages now renders
+  as code rather than showing literal backticks.

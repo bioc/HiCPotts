@@ -2,9 +2,8 @@
 ^\.Rproj\.user$
 ^\.git$
 ^\.gitignore$
-^src/.*\.o$
-^src/.*\.dll$
-^src/.*\.so$
 ^\.vscode$
 ^doc$
 ^Meta$
+^HiCPotts\.Rcheck$
+^src/.*\.(o|so|dll)$

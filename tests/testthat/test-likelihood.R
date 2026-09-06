@@ -35,8 +35,10 @@ test_that("ZIP zero branch uses exp(-mu), not exp(-eta) (regression test)", {
   log_mu <- 2; mu <- exp(log_mu); theta <- 0.3
   pred <- make_pred(log_mu)
   
-  expected <- sum(rep(log(theta + (1 - theta) * exp(-mu)), 4))   # 4 zeros
-  wrong    <- sum(rep(log(theta + (1 - theta) * exp(-log_mu)), 4))
+  ## Every cell in the complete N x N matrix contributes once.
+  pair_w <- rep(1, 4)
+  expected <- sum(pair_w * rep(log(theta + (1 - theta) * exp(-mu)), 4))
+  wrong    <- sum(pair_w * rep(log(theta + (1 - theta) * exp(-log_mu)), 4))
   
   got <- likelihood_combined(
     pred_combined = pred, params = params, z = z, y = y,
@@ -68,9 +70,10 @@ test_that("Component 2 NB likelihood uses ALL data.", {
   )
   expect_equal(got, expected_all, tolerance = 1e-12)
   
-  ## Demonstrate the old buggy result would have been
-  wrong <- dnbinom(yc[2], size = size, mu = exp(log_mu), log = TRUE)
-  expect_false(isTRUE(all.equal(got, wrong)))
+  ## The result must not match a single-observation likelihood, confirming
+  ## the function sums over all of component 2's observations.
+  single_obs <- dnbinom(yc[2], size = size, mu = exp(log_mu), log = TRUE)
+  expect_false(isTRUE(all.equal(got, single_obs)))
 })
 
 test_that("Empty component returns 0 instead of erroring", {

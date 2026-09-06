@@ -76,6 +76,17 @@ NumericMatrix compute_neighbours(const NumericMatrix &a,
 // {1,2,3}, so the comparison is false.
 // -----------------------------------------------------------------------------
 
+// Rcpp automatically wraps every `[[Rcpp::export]]` function's generated
+// wrapper in an `Rcpp::RNGScope` (a GetRNGstate()/PutRNGstate() bracket)
+// unless told otherwise. `run_metropolis_MCMC_betas()` (src/MCMC_chain.cpp)
+// calls this function via a `Function` R-callback object from within its own
+// already-RNGScope-wrapped body, every MCMC iteration; a nested RNGScope from
+// an inner exported call would otherwise disrupt the outer function's random
+// draws for the remainder of that top-level call. `Neighbours_combined` and
+// `pz_123` (below) use no random-number generation internally (both are
+// purely deterministic), so marking them `rng = false` suppresses Rcpp's
+// auto-inserted RNGScope in their wrappers, avoiding the nested scope and
+// preserving independently-advancing RNG behaviour in the caller.
 //' @name Neighbours_combined
 //' @title Neighbours Function for the Potts Model
 //'
@@ -134,14 +145,15 @@ NumericMatrix compute_neighbours(const NumericMatrix &a,
 //' proposed <- matrix(sample(1:3, 25, replace = TRUE), ncol = 5)
 //'
 //' # Evaluate neighbors for the proposed configuration:
-//' neigh_proposed <- Neighbours_combined(potts_data, N, proposed_value = proposed)
+//' neigh_proposed <- Neighbours_combined(
+//'   potts_data, N,
+//'   proposed_value = proposed
+//' )
 //' neigh_proposed
 //' 
-//' @keywords internal
+//' @noRd
 //'
-//' @export
-//
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 NumericMatrix Neighbours_combined(NumericMatrix potts_data,
                                   int N,
                                   Nullable<NumericMatrix> proposed_value = R_NilValue) {

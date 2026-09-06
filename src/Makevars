@@ -1,2 +1,6 @@
-## Package-level flags 
-PKG_CPPFLAGS = -DRCPP_USE_UNWIND_PROTECT=1 
+## Package-level flags
+PKG_CPPFLAGS = -DRCPP_USE_UNWIND_PROTECT=1
+
+## RcppArmadillo linear algebra (chol, matrix products in the adaptive-covariance
+## MCMC proposal) needs R's BLAS/LAPACK.
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

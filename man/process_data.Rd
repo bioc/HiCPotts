@@ -4,109 +4,148 @@
 \alias{process_data}
 \title{CSV file Data Processing for Hi-C Interaction Matrices and Covariates}
 \usage{
-process_data(data, N, scale_max = NA_real_, 
-     standardization_y = FALSE, pad_with_zero = FALSE)
+process_data(data, N, scale_max = NA_real_,
+     standardization_y = FALSE, pad_with_zero = FALSE,
+     mirror = FALSE)
 }
 \arguments{
 \item{data}{A \code{data.frame} containing the following required columns:
 \itemize{
-  \item \code{start}: Numeric start coordinates for locus i.
-  \item \code{end}: Numeric end coordinates for locus j.
-  \item \code{interactions}: Numeric vector of observed interaction counts between loci i and j.
-  \item \code{GC}: GC content measure for the given loci.
-  \item \code{ACC}: Accessibility score for the given loci.
-  \item \code{TES}: A measure related to transposable elements for the given loci.
+\item \code{start}: Numeric start coordinates for locus i.
+\item \code{end}: Numeric end coordinates for locus j.
+\item \code{interactions}: Numeric vector of observed interaction counts
+between loci i and j.
+\item \code{GC}: GC content measure for the given loci.
+\item \code{ACC}: Accessibility score for the given loci.
+\item \code{TES}: A measure related to transposable elements for the
+given loci.
 }}
 
-\item{N}{An integer specifying the dimension of the resulting \eqn{N \times N} matrices. The data
-provided should correspond to \eqn{N^2} interactions or multiples thereof, as it will be reshaped
-into one or more \eqn{N \times N} matrices.}
+\item{N}{An integer specifying the dimension of the resulting \eqn{N \times
+N} matrices. The data provided should correspond to \eqn{N^2} interactions or
+multiples thereof, as it will be reshaped into one or more \eqn{N \times N}
+matrices.}
 
-\item{scale_max}{A numeric value indicating the maximum scaling factor for interaction counts
-when \code{standardization_y = TRUE}.}
+\item{scale_max}{A numeric value indicating the maximum scaling factor for
+interaction counts when \code{standardization_y = TRUE}.}
 
-\item{standardization_y}{A logical value. If \code{TRUE}, interaction counts are scaled by applying a min-max normalization and rounding. If \code{FALSE},
+\item{standardization_y}{A logical value. If \code{TRUE}, interaction counts
+are scaled by applying a min-max normalization and rounding. If \code{FALSE},
 the raw interaction counts are used as provided.}
 
-\item{pad_with_zero}{Logical; if TRUE, zero-pads the last block when nrow(data) is not a multiple of N^2.}
+\item{pad_with_zero}{Logical; if TRUE, zero-pads the last block when
+nrow(data) is not a multiple of N^2.}
+
+\item{mirror}{Logical; if \code{TRUE}, treat \code{data} as an upper- or
+lower-triangle half matrix and fill the opposite triangle by reflection
+before reshaping. Hi-C contacts are symmetric, so cell \eqn{(i,j)} and
+cell \eqn{(j,i)} are two records of one measured contact; reflecting
+therefore adds no fabricated observations, unlike
+\code{pad_with_zero}. Rows are also returned in the column-major order
+the rest of the package assumes. A half matrix over \eqn{N} bins holds
+\eqn{N(N+1)/2} rows with the diagonal or \eqn{N(N-1)/2} without it,
+neither of which is a multiple of \eqn{N^2}, which is why such input
+otherwise fails the block check.}
 }
 \value{
 A list with two elements:
 \describe{
-  \item{\code{x_vars}}{A named list containing lists of \eqn{N \times N} matrices for each covariate:
-  \code{distance}, \code{GC}, \code{TES}, \code{ACC}.}
+\item{\code{x_vars}}{A named list containing lists of \eqn{N \times N}
+matrices for each covariate: \code{distance}, \code{GC}, \code{TES},
+\code{ACC}.}
 
-  \item{\code{y}}{A list of \eqn{N \times N} matrices representing the (scaled) interaction counts
-  corresponding to the covariates in \code{x_vars}.}
+\item{\code{y}}{A list of \eqn{N \times N} matrices representing the
+(scaled) interaction counts corresponding to the covariates in
+\code{x_vars}.}
 }
 }
 \description{
-The \code{process_data} function takes a data frame with interaction information and associated covariates
-(genomic bins, GC content, transposable elements(TES), and accessibility) and converts it into
-a structured list of \eqn{N \times N} matrices suitable for modeling. It also provides options for scaling interaction counts and checking for
-required columns and missing values.
+The \code{process_data} function takes a data frame with
+interaction information and associated covariates (genomic bins, GC content,
+transposable elements(TES), and accessibility) and converts it into a
+structured list of \eqn{N \times N} matrices suitable for modeling. It also
+provides options for scaling interaction counts and checking for required
+columns and missing values.
 }
 \details{
-This function processes a long-format data frame where each row represents an interaction between
-two loci (denoted by \code{start} and \code{end}) and associated covariate values.
-Key steps include:
+This function processes a long-format data frame where each row
+represents an interaction between two loci (denoted by \code{start} and
+\code{end}) and associated covariate values. Key steps include:
 \enumerate{
-  \item Validating that required columns are present and checking for missing values.
-  \item Optionally scaling the interaction counts to a fixed range to reduce skew or prepare data
-        for models sensitive to the magnitude of counts.
-  \item Computing genomic distances as \eqn{|end - start|}.
-  \item Reshaping the vectorized interaction and covariate data into \eqn{N \times N} matrices.
-        If the number of rows in \code{data} is greater than \eqn{N^2}, it splits them into multiple
-        \eqn{N \times N} matrices (one for each segment of length \eqn{N^2}).
-  \item Storing the resulting data in a list structure suitable for downstream analyses.
+\item Validating that required columns are present and checking for missing
+values.
+\item Optionally scaling the interaction counts to a fixed range to reduce
+skew or prepare data for models sensitive to the magnitude of counts.
+\item Computing the genomic distance between the two bins of each pair.
+When the \code{start.j.} column is present (as in \code{get_data()} output)
+the distance is \eqn{|start.j. - start|}, the separation between the two
+bin STARTS, which is zero on the diagonal and equal for both mirrored
+copies of a contact. Designs carrying only \code{start}/\code{end} fall
+back to \eqn{|end - start|}; note that \code{end} is bin j's END, so that
+legacy form spans both bins. The definition actually used is reported in a
+message.
+\item Reshaping the vectorized interaction and covariate data into \eqn{N
+  \times N} matrices. If the number of rows in \code{data} is greater than
+\eqn{N^2}, it splits them into multiple \eqn{N \times N} matrices (one for
+each segment of length \eqn{N^2}).
+\item Storing the resulting data in a list structure suitable for
+downstream analyses.
 }
 
-The returned \code{x_vars} list contains multiple \eqn{N \times N} matrices for each covariate:
+The returned \code{x_vars} list contains multiple \eqn{N \times N} matrices
+for each covariate:
 \itemize{
-  \item \code{x_vars$distance}: A list of one or more \eqn{N \times N} matrices containing genomic distances.
-  \item \code{x_vars$GC}: A list of \eqn{N \times N} matrices for GC content.
-  \item \code{x_vars$TES}: A list of \eqn{N \times N} matrices for TES values.
-  \item \code{x_vars$ACC}: A list of \eqn{N \times N} matrices for accessibility scores.
+\item \code{x_vars$distance}: A list of one or more \eqn{N \times N}
+matrices containing genomic distances.
+\item \code{x_vars$GC}: A list of \eqn{N \times N} matrices for GC content.
+\item \code{x_vars$TES}: A list of \eqn{N \times N} matrices for TES
+values.
+\item \code{x_vars$ACC}: A list of \eqn{N \times N} matrices for
+accessibility scores.
 }
 
-The \code{y} element in the returned list contains the scaled (or raw) interaction counts structured
-as a list of \eqn{N \times N} matrices.
+The \code{y} element in the returned list contains the scaled (or raw)
+interaction counts structured as a list of \eqn{N \times N} matrices.
 }
 \examples{
 set.seed(123)
 df <- data.frame(
-  start = rep(1:10, each = 10),
-  end = rep(11:20, times = 10),
-  interactions = rpois(100, 5),
-  GC = runif(100, 0, 1),
-  TES = runif(100, 0, 1),
-  ACC = runif(100, 0, 1)
+    start = rep(1:10, each = 10),
+    end = rep(11:20, times = 10),
+    interactions = rpois(100, 5),
+    GC = runif(100, 0, 1),
+    TES = runif(100, 0, 1),
+    ACC = runif(100, 0, 1)
 )
-processed <- process_data(df, N = 10, scale_max = NA_real_, 
-  standardization_y = FALSE, pad_with_zero = FALSE)
-#x_vars <- processed$x_vars
-#y_matrices <- processed$y
-#str(x_vars) # Show structure of covariates
-#str(y_matrices) # Show structure of interaction matrices
+processed <- process_data(df,
+    N = 10, scale_max = NA_real_,
+    standardization_y = FALSE, pad_with_zero = FALSE
+)
+# x_vars <- processed$x_vars
+# y_matrices <- processed$y
+# str(x_vars) # Show structure of covariates
+# str(y_matrices) # Show structure of interaction matrices
 
 
 # Extended example with larger dataset
-# Suppose we have a data frame 'large_df' corresponding to a 20x20 interaction matrix
-#large_df <- data.frame(
+# Suppose we have a data frame 'large_df' corresponding to a
+# 20x20 interaction matrix
+# large_df <- data.frame(
 #  start = rep(1:20, each = 20),
 #  end = rep(21:40, times = 20),
 #  interactions = rpois(400, 5),
 #  GC = runif(400, 0, 1),
 #  TES = runif(400, 0, 1),
 #  ACC = runif(400, 0, 1)
-#)
-#processed <- process_data(large_df, N = 20, scale_max = NA_real_, 
+# )
+# processed <- process_data(large_df, N = 20, scale_max = NA_real_,
 #   standardization_y = FALSE, pad_with_zero = FALSE)
-#x_vars <- processed[[1]]
-#y_matrices <- processed[[2]]
-#str(x_vars)
-#str(y_matrices)
-# See vignette("HiCPotts_vignette") for detailed examples with real Hi-C data.
+# x_vars <- processed[[1]]
+# y_matrices <- processed[[2]]
+# str(x_vars)
+# str(y_matrices)
+# See vignette("HiCPotts_vignette") for detailed examples with
+# real Hi-C data.
 #
 
 }

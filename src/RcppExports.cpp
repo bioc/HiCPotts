@@ -11,9 +11,231 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// hicpotts_iterated_eb_priors_cpp
+List hicpotts_iterated_eb_priors_cpp(NumericMatrix y, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, NumericMatrix z);
+RcppExport SEXP _HiCPotts_hicpotts_iterated_eb_priors_cpp(SEXP ySEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP zSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type z(zSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_iterated_eb_priors_cpp(y, cov1, cov2, cov3, cov4, z));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_soft_eb_priors_cpp
+List hicpotts_soft_eb_priors_cpp(NumericMatrix y, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, NumericMatrix weight1, NumericMatrix weight2, NumericMatrix weight3);
+RcppExport SEXP _HiCPotts_hicpotts_soft_eb_priors_cpp(SEXP ySEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP weight1SEXP, SEXP weight2SEXP, SEXP weight3SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type weight1(weight1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type weight2(weight2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type weight3(weight3SEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_soft_eb_priors_cpp(y, cov1, cov2, cov3, cov4, weight1, weight2, weight3));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_cached_posterior_cpp
+double hicpotts_cached_posterior_cpp(NumericVector beta, NumericMatrix z, NumericMatrix y, int component, double theta, double size_value, std::string dist, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, List priors);
+RcppExport SEXP _HiCPotts_hicpotts_cached_posterior_cpp(SEXP betaSEXP, SEXP zSEXP, SEXP ySEXP, SEXP componentSEXP, SEXP thetaSEXP, SEXP size_valueSEXP, SEXP distSEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP priorsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type z(zSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type component(componentSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type size_value(size_valueSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< List >::type priors(priorsSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_cached_posterior_cpp(beta, z, y, component, theta, size_value, dist, cov1, cov2, cov3, cov4, priors));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_noise_relationship_logprior_cpp
+double hicpotts_noise_relationship_logprior_cpp(NumericVector beta1, NumericVector beta2, NumericVector beta3, NumericVector covariate_sds, double link_sd, double order_strength, double order_width);
+RcppExport SEXP _HiCPotts_hicpotts_noise_relationship_logprior_cpp(SEXP beta1SEXP, SEXP beta2SEXP, SEXP beta3SEXP, SEXP covariate_sdsSEXP, SEXP link_sdSEXP, SEXP order_strengthSEXP, SEXP order_widthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta2(beta2SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta3(beta3SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type covariate_sds(covariate_sdsSEXP);
+    Rcpp::traits::input_parameter< double >::type link_sd(link_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type order_strength(order_strengthSEXP);
+    Rcpp::traits::input_parameter< double >::type order_width(order_widthSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_noise_relationship_logprior_cpp(beta1, beta2, beta3, covariate_sds, link_sd, order_strength, order_width));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_branch_prior_logratio_cpp
+double hicpotts_branch_prior_logratio_cpp(NumericVector beta1, NumericVector beta2, NumericVector beta3, NumericVector covariate_sds, double link_sd, double order_strength, double order_width);
+RcppExport SEXP _HiCPotts_hicpotts_branch_prior_logratio_cpp(SEXP beta1SEXP, SEXP beta2SEXP, SEXP beta3SEXP, SEXP covariate_sdsSEXP, SEXP link_sdSEXP, SEXP order_strengthSEXP, SEXP order_widthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta1(beta1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta2(beta2SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta3(beta3SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type covariate_sds(covariate_sdsSEXP);
+    Rcpp::traits::input_parameter< double >::type link_sd(link_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type order_strength(order_strengthSEXP);
+    Rcpp::traits::input_parameter< double >::type order_width(order_widthSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_branch_prior_logratio_cpp(beta1, beta2, beta3, covariate_sds, link_sd, order_strength, order_width));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_gamma_proposal_logratio_cpp
+double hicpotts_gamma_proposal_logratio_cpp(double current, double proposed, double local_step, double large_probability, double large_multiplier, double independence_probability, double prior_shape1, double prior_shape2);
+RcppExport SEXP _HiCPotts_hicpotts_gamma_proposal_logratio_cpp(SEXP currentSEXP, SEXP proposedSEXP, SEXP local_stepSEXP, SEXP large_probabilitySEXP, SEXP large_multiplierSEXP, SEXP independence_probabilitySEXP, SEXP prior_shape1SEXP, SEXP prior_shape2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type current(currentSEXP);
+    Rcpp::traits::input_parameter< double >::type proposed(proposedSEXP);
+    Rcpp::traits::input_parameter< double >::type local_step(local_stepSEXP);
+    Rcpp::traits::input_parameter< double >::type large_probability(large_probabilitySEXP);
+    Rcpp::traits::input_parameter< double >::type large_multiplier(large_multiplierSEXP);
+    Rcpp::traits::input_parameter< double >::type independence_probability(independence_probabilitySEXP);
+    Rcpp::traits::input_parameter< double >::type prior_shape1(prior_shape1SEXP);
+    Rcpp::traits::input_parameter< double >::type prior_shape2(prior_shape2SEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_gamma_proposal_logratio_cpp(current, proposed, local_step, large_probability, large_multiplier, independence_probability, prior_shape1, prior_shape2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_cluster_transition_counts
+IntegerVector hicpotts_cluster_transition_counts(NumericMatrix z, NumericMatrix y, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, NumericMatrix beta, NumericVector sizes, double gamma, std::string dist, int repetitions);
+RcppExport SEXP _HiCPotts_hicpotts_cluster_transition_counts(SEXP zSEXP, SEXP ySEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP betaSEXP, SEXP sizesSEXP, SEXP gammaSEXP, SEXP distSEXP, SEXP repetitionsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type z(zSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type sizes(sizesSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< int >::type repetitions(repetitionsSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_cluster_transition_counts(z, y, cov1, cov2, cov3, cov4, beta, sizes, gamma, dist, repetitions));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_cell_logweights_cpp
+NumericVector hicpotts_cell_logweights_cpp(NumericMatrix z, NumericMatrix y, NumericMatrix betas, NumericVector sizes, double theta, double gamma, std::string dist, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, int row, int column);
+RcppExport SEXP _HiCPotts_hicpotts_cell_logweights_cpp(SEXP zSEXP, SEXP ySEXP, SEXP betasSEXP, SEXP sizesSEXP, SEXP thetaSEXP, SEXP gammaSEXP, SEXP distSEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP rowSEXP, SEXP columnSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type z(zSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type betas(betasSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type sizes(sizesSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dist(distSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< int >::type row(rowSEXP);
+    Rcpp::traits::input_parameter< int >::type column(columnSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_cell_logweights_cpp(z, y, betas, sizes, theta, gamma, dist, cov1, cov2, cov3, cov4, row, column));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_theta_loglik
+double hicpotts_theta_loglik(NumericMatrix z_current, NumericMatrix y, NumericVector b1, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, double size1, double theta_eval, std::string dist);
+RcppExport SEXP _HiCPotts_hicpotts_theta_loglik(SEXP z_currentSEXP, SEXP ySEXP, SEXP b1SEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP size1SEXP, SEXP theta_evalSEXP, SEXP distSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type z_current(z_currentSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< double >::type size1(size1SEXP);
+    Rcpp::traits::input_parameter< double >::type theta_eval(theta_evalSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dist(distSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_theta_loglik(z_current, y, b1, cov1, cov2, cov3, cov4, size1, theta_eval, dist));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_theta_gibbs_step_cpp
+double hicpotts_theta_gibbs_step_cpp(NumericMatrix z_current, NumericMatrix y, NumericVector b1, NumericMatrix cov1, NumericMatrix cov2, NumericMatrix cov3, NumericMatrix cov4, double size1, double theta_current, std::string dist);
+RcppExport SEXP _HiCPotts_hicpotts_theta_gibbs_step_cpp(SEXP z_currentSEXP, SEXP ySEXP, SEXP b1SEXP, SEXP cov1SEXP, SEXP cov2SEXP, SEXP cov3SEXP, SEXP cov4SEXP, SEXP size1SEXP, SEXP theta_currentSEXP, SEXP distSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type z_current(z_currentSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov1(cov1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov2(cov2SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov3(cov3SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type cov4(cov4SEXP);
+    Rcpp::traits::input_parameter< double >::type size1(size1SEXP);
+    Rcpp::traits::input_parameter< double >::type theta_current(theta_currentSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dist(distSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_theta_gibbs_step_cpp(z_current, y, b1, cov1, cov2, cov3, cov4, size1, theta_current, dist));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_simulate_potts_labels_cpp
+NumericMatrix hicpotts_simulate_potts_labels_cpp(int N, double gamma, int sweeps);
+RcppExport SEXP _HiCPotts_hicpotts_simulate_potts_labels_cpp(SEXP NSEXP, SEXP gammaSEXP, SEXP sweepsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< int >::type sweeps(sweepsSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_simulate_potts_labels_cpp(N, gamma, sweeps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// hicpotts_calibrate_abc_epsilon_cpp
+List hicpotts_calibrate_abc_epsilon_cpp(int N, double gamma_prior_shape1, double gamma_prior_shape2, double abc_epsilon_quantile, int abc_potts_sweeps_arg, int abc_sim_reps, int abc_calibration_reps);
+RcppExport SEXP _HiCPotts_hicpotts_calibrate_abc_epsilon_cpp(SEXP NSEXP, SEXP gamma_prior_shape1SEXP, SEXP gamma_prior_shape2SEXP, SEXP abc_epsilon_quantileSEXP, SEXP abc_potts_sweeps_argSEXP, SEXP abc_sim_repsSEXP, SEXP abc_calibration_repsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_prior_shape1(gamma_prior_shape1SEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_prior_shape2(gamma_prior_shape2SEXP);
+    Rcpp::traits::input_parameter< double >::type abc_epsilon_quantile(abc_epsilon_quantileSEXP);
+    Rcpp::traits::input_parameter< int >::type abc_potts_sweeps_arg(abc_potts_sweeps_argSEXP);
+    Rcpp::traits::input_parameter< int >::type abc_sim_reps(abc_sim_repsSEXP);
+    Rcpp::traits::input_parameter< int >::type abc_calibration_reps(abc_calibration_repsSEXP);
+    rcpp_result_gen = Rcpp::wrap(hicpotts_calibrate_abc_epsilon_cpp(N, gamma_prior_shape1, gamma_prior_shape2, abc_epsilon_quantile, abc_potts_sweeps_arg, abc_sim_reps, abc_calibration_reps));
+    return rcpp_result_gen;
+END_RCPP
+}
 // run_metropolis_MCMC_betas
-List run_metropolis_MCMC_betas(int N, double gamma_prior, int iterations, List x_vars, NumericMatrix y, bool use_data_priors, Nullable<List> user_fixed_priors, std::string dist, Nullable<double> epsilon, std::string distance_metric, Nullable<NumericVector> size_start, Nullable<double> theta_start);
-RcppExport SEXP _HiCPotts_run_metropolis_MCMC_betas(SEXP NSEXP, SEXP gamma_priorSEXP, SEXP iterationsSEXP, SEXP x_varsSEXP, SEXP ySEXP, SEXP use_data_priorsSEXP, SEXP user_fixed_priorsSEXP, SEXP distSEXP, SEXP epsilonSEXP, SEXP distance_metricSEXP, SEXP size_startSEXP, SEXP theta_startSEXP) {
+List run_metropolis_MCMC_betas(int N, double gamma_prior, int iterations, List x_vars, NumericMatrix y, bool use_data_priors, Nullable<List> user_fixed_priors, std::string dist, Nullable<double> epsilon, std::string distance_metric, Nullable<NumericVector> size_start, Nullable<double> theta_start, Nullable<NumericMatrix> z_start, bool mcse_stop, int mcse_min_iterations, int mcse_check_interval, double mcse_relative_threshold, int tempering_warmup, double tempering_beta_min, int tempering_cycle, double gamma_prior_shape1, double gamma_prior_shape2, double abc_epsilon_quantile, int gamma_update_interval, int abc_potts_sweeps_arg, int abc_sim_reps, int z_probability_burnin_arg, double comp23_barrier_kappa, double comp23_barrier_w, bool use_noise_relationship_prior, double noise_link_sd, double noise_order_strength, double noise_order_width, int branch_swap_interval, int signal_block_move_interval, double gamma_large_jump_probability, double gamma_large_jump_multiplier, double gamma_independence_probability, std::string gamma_method, bool verbose, int progress_interval, Nullable<NumericMatrix> beta_start, bool validation_freeze_z, bool validation_freeze_beta, bool validation_freeze_gamma, bool validation_freeze_size, bool validation_freeze_theta);
+RcppExport SEXP _HiCPotts_run_metropolis_MCMC_betas(SEXP NSEXP, SEXP gamma_priorSEXP, SEXP iterationsSEXP, SEXP x_varsSEXP, SEXP ySEXP, SEXP use_data_priorsSEXP, SEXP user_fixed_priorsSEXP, SEXP distSEXP, SEXP epsilonSEXP, SEXP distance_metricSEXP, SEXP size_startSEXP, SEXP theta_startSEXP, SEXP z_startSEXP, SEXP mcse_stopSEXP, SEXP mcse_min_iterationsSEXP, SEXP mcse_check_intervalSEXP, SEXP mcse_relative_thresholdSEXP, SEXP tempering_warmupSEXP, SEXP tempering_beta_minSEXP, SEXP tempering_cycleSEXP, SEXP gamma_prior_shape1SEXP, SEXP gamma_prior_shape2SEXP, SEXP abc_epsilon_quantileSEXP, SEXP gamma_update_intervalSEXP, SEXP abc_potts_sweeps_argSEXP, SEXP abc_sim_repsSEXP, SEXP z_probability_burnin_argSEXP, SEXP comp23_barrier_kappaSEXP, SEXP comp23_barrier_wSEXP, SEXP use_noise_relationship_priorSEXP, SEXP noise_link_sdSEXP, SEXP noise_order_strengthSEXP, SEXP noise_order_widthSEXP, SEXP branch_swap_intervalSEXP, SEXP signal_block_move_intervalSEXP, SEXP gamma_large_jump_probabilitySEXP, SEXP gamma_large_jump_multiplierSEXP, SEXP gamma_independence_probabilitySEXP, SEXP gamma_methodSEXP, SEXP verboseSEXP, SEXP progress_intervalSEXP, SEXP beta_startSEXP, SEXP validation_freeze_zSEXP, SEXP validation_freeze_betaSEXP, SEXP validation_freeze_gammaSEXP, SEXP validation_freeze_sizeSEXP, SEXP validation_freeze_thetaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,7 +251,42 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type distance_metric(distance_metricSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type size_start(size_startSEXP);
     Rcpp::traits::input_parameter< Nullable<double> >::type theta_start(theta_startSEXP);
-    rcpp_result_gen = Rcpp::wrap(run_metropolis_MCMC_betas(N, gamma_prior, iterations, x_vars, y, use_data_priors, user_fixed_priors, dist, epsilon, distance_metric, size_start, theta_start));
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type z_start(z_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type mcse_stop(mcse_stopSEXP);
+    Rcpp::traits::input_parameter< int >::type mcse_min_iterations(mcse_min_iterationsSEXP);
+    Rcpp::traits::input_parameter< int >::type mcse_check_interval(mcse_check_intervalSEXP);
+    Rcpp::traits::input_parameter< double >::type mcse_relative_threshold(mcse_relative_thresholdSEXP);
+    Rcpp::traits::input_parameter< int >::type tempering_warmup(tempering_warmupSEXP);
+    Rcpp::traits::input_parameter< double >::type tempering_beta_min(tempering_beta_minSEXP);
+    Rcpp::traits::input_parameter< int >::type tempering_cycle(tempering_cycleSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_prior_shape1(gamma_prior_shape1SEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_prior_shape2(gamma_prior_shape2SEXP);
+    Rcpp::traits::input_parameter< double >::type abc_epsilon_quantile(abc_epsilon_quantileSEXP);
+    Rcpp::traits::input_parameter< int >::type gamma_update_interval(gamma_update_intervalSEXP);
+    Rcpp::traits::input_parameter< int >::type abc_potts_sweeps_arg(abc_potts_sweeps_argSEXP);
+    Rcpp::traits::input_parameter< int >::type abc_sim_reps(abc_sim_repsSEXP);
+    Rcpp::traits::input_parameter< int >::type z_probability_burnin_arg(z_probability_burnin_argSEXP);
+    Rcpp::traits::input_parameter< double >::type comp23_barrier_kappa(comp23_barrier_kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type comp23_barrier_w(comp23_barrier_wSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_noise_relationship_prior(use_noise_relationship_priorSEXP);
+    Rcpp::traits::input_parameter< double >::type noise_link_sd(noise_link_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type noise_order_strength(noise_order_strengthSEXP);
+    Rcpp::traits::input_parameter< double >::type noise_order_width(noise_order_widthSEXP);
+    Rcpp::traits::input_parameter< int >::type branch_swap_interval(branch_swap_intervalSEXP);
+    Rcpp::traits::input_parameter< int >::type signal_block_move_interval(signal_block_move_intervalSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_large_jump_probability(gamma_large_jump_probabilitySEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_large_jump_multiplier(gamma_large_jump_multiplierSEXP);
+    Rcpp::traits::input_parameter< double >::type gamma_independence_probability(gamma_independence_probabilitySEXP);
+    Rcpp::traits::input_parameter< std::string >::type gamma_method(gamma_methodSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< int >::type progress_interval(progress_intervalSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type beta_start(beta_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type validation_freeze_z(validation_freeze_zSEXP);
+    Rcpp::traits::input_parameter< bool >::type validation_freeze_beta(validation_freeze_betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type validation_freeze_gamma(validation_freeze_gammaSEXP);
+    Rcpp::traits::input_parameter< bool >::type validation_freeze_size(validation_freeze_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type validation_freeze_theta(validation_freeze_thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_metropolis_MCMC_betas(N, gamma_prior, iterations, x_vars, y, use_data_priors, user_fixed_priors, dist, epsilon, distance_metric, size_start, theta_start, z_start, mcse_stop, mcse_min_iterations, mcse_check_interval, mcse_relative_threshold, tempering_warmup, tempering_beta_min, tempering_cycle, gamma_prior_shape1, gamma_prior_shape2, abc_epsilon_quantile, gamma_update_interval, abc_potts_sweeps_arg, abc_sim_reps, z_probability_burnin_arg, comp23_barrier_kappa, comp23_barrier_w, use_noise_relationship_prior, noise_link_sd, noise_order_strength, noise_order_width, branch_swap_interval, signal_block_move_interval, gamma_large_jump_probability, gamma_large_jump_multiplier, gamma_independence_probability, gamma_method, verbose, progress_interval, beta_start, validation_freeze_z, validation_freeze_beta, validation_freeze_gamma, validation_freeze_size, validation_freeze_theta));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -38,7 +295,6 @@ NumericMatrix Neighbours_combined(NumericMatrix potts_data, int N, Nullable<Nume
 RcppExport SEXP _HiCPotts_Neighbours_combined(SEXP potts_dataSEXP, SEXP NSEXP, SEXP proposed_valueSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type potts_data(potts_dataSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericMatrix> >::type proposed_value(proposed_valueSEXP);
@@ -51,7 +307,6 @@ NumericMatrix pz_123(NumericMatrix z, NumericMatrix sum_neighbours, NumericMatri
 RcppExport SEXP _HiCPotts_pz_123(SEXP zSEXP, SEXP sum_neighboursSEXP, SEXP ySEXP, SEXP pred_combinedSEXP, SEXP chainsSEXP, SEXP chain_gammaSEXP, SEXP x_varsSEXP, SEXP thetaSEXP, SEXP size_chainSEXP, SEXP NSEXP, SEXP iterSEXP, SEXP distSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type z(zSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type sum_neighbours(sum_neighboursSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type y(ySEXP);
@@ -70,7 +325,19 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_HiCPotts_run_metropolis_MCMC_betas", (DL_FUNC) &_HiCPotts_run_metropolis_MCMC_betas, 12},
+    {"_HiCPotts_hicpotts_iterated_eb_priors_cpp", (DL_FUNC) &_HiCPotts_hicpotts_iterated_eb_priors_cpp, 6},
+    {"_HiCPotts_hicpotts_soft_eb_priors_cpp", (DL_FUNC) &_HiCPotts_hicpotts_soft_eb_priors_cpp, 8},
+    {"_HiCPotts_hicpotts_cached_posterior_cpp", (DL_FUNC) &_HiCPotts_hicpotts_cached_posterior_cpp, 12},
+    {"_HiCPotts_hicpotts_noise_relationship_logprior_cpp", (DL_FUNC) &_HiCPotts_hicpotts_noise_relationship_logprior_cpp, 7},
+    {"_HiCPotts_hicpotts_branch_prior_logratio_cpp", (DL_FUNC) &_HiCPotts_hicpotts_branch_prior_logratio_cpp, 7},
+    {"_HiCPotts_hicpotts_gamma_proposal_logratio_cpp", (DL_FUNC) &_HiCPotts_hicpotts_gamma_proposal_logratio_cpp, 8},
+    {"_HiCPotts_hicpotts_cluster_transition_counts", (DL_FUNC) &_HiCPotts_hicpotts_cluster_transition_counts, 11},
+    {"_HiCPotts_hicpotts_cell_logweights_cpp", (DL_FUNC) &_HiCPotts_hicpotts_cell_logweights_cpp, 13},
+    {"_HiCPotts_hicpotts_theta_loglik", (DL_FUNC) &_HiCPotts_hicpotts_theta_loglik, 10},
+    {"_HiCPotts_hicpotts_theta_gibbs_step_cpp", (DL_FUNC) &_HiCPotts_hicpotts_theta_gibbs_step_cpp, 10},
+    {"_HiCPotts_hicpotts_simulate_potts_labels_cpp", (DL_FUNC) &_HiCPotts_hicpotts_simulate_potts_labels_cpp, 3},
+    {"_HiCPotts_hicpotts_calibrate_abc_epsilon_cpp", (DL_FUNC) &_HiCPotts_hicpotts_calibrate_abc_epsilon_cpp, 7},
+    {"_HiCPotts_run_metropolis_MCMC_betas", (DL_FUNC) &_HiCPotts_run_metropolis_MCMC_betas, 47},
     {"_HiCPotts_Neighbours_combined", (DL_FUNC) &_HiCPotts_Neighbours_combined, 3},
     {"_HiCPotts_pz_123", (DL_FUNC) &_HiCPotts_pz_123, 12},
     {NULL, NULL, 0}

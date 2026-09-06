@@ -6,12 +6,14 @@
 \usage{
 get_data(
   file_path, chr, start, end, resolution,
-  genome_package, acc_wig = NULL,
+  genome_package = NULL, acc_wig = NULL,
   chain_file = NULL, te_granges = NULL
 )
 }
 \arguments{
-\item{file_path}{Path to the Hi-C file (\code{.hic}, \code{.cool}, or \code{.h5}).}
+\item{file_path}{Path to a \code{.cool} file or a supported HDF5
+schema. Binary \code{.hic} files are not read directly; convert them to
+\code{.cool} or extract counts with \code{strawr::straw()} first.}
 
 \item{chr}{Chromosome name (e.g. \code{"chr2L"}).}
 
@@ -19,11 +21,12 @@ get_data(
 
 \item{end}{End coordinate of the region.}
 
-\item{resolution}{Target bin size (bp); smaller native bins are merged, larger
-ones are sliced.}
+\item{resolution}{Target bin size (bp); smaller native bins are merged,
+larger ones are sliced.}
 
-\item{genome_package}{Name of a BSgenome package (e.g.
-\code{"BSgenome.Dmelanogaster.UCSC.dm6"}) for GC calculations.}
+\item{genome_package}{Optional name of a BSgenome package (e.g.
+\code{"BSgenome.Dmelanogaster.UCSC.dm6"}) for GC calculations. When
+\code{NULL}, the returned GC column is \code{NA}.}
 
 \item{acc_wig}{(Optional) Path to a DNase-I wig (bedGraph) file. Requires
 \code{chain_file} to lift over.}
@@ -37,49 +40,47 @@ ones are sliced.}
 A \code{data.frame} with one row per bin-pair across \code{[start,end]} at
 \code{resolution}, containing:
 \describe{
-  \item{\code{start}}{Bin1 start.}
-  \item{\code{end.i.}}{Bin1 end.}
-  \item{\code{start.j.}}{Bin2 start.}
-  \item{\code{end}}{Bin2 end.}
-  \item{\code{chrom}}{Chromosome name.}
-  \item{\code{GC}}{Combined GC fraction of the two bins.}
-  \item{\code{ACC}}{Mean DNase-I score per bin or \code{NA}.}
-  \item{\code{TES}}{Sum of TE overlaps in both bins or \code{NA}.}
-  \item{\code{interactions}}{Observed contact count (\code{0} if absent).}
+\item{\code{start}}{Bin1 start.}
+\item{\code{end.i.}}{Bin1 end.}
+\item{\code{start.j.}}{Bin2 start.}
+\item{\code{end}}{Bin2 end.}
+\item{\code{chrom}}{Chromosome name.}
+\item{\code{GC}}{Combined GC fraction of the two bins.}
+\item{\code{ACC}}{Mean DNase-I score per bin or \code{NA}.}
+\item{\code{TES}}{Sum of TE overlaps in both bins or \code{NA}.}
+\item{\code{interactions}}{Observed contact count (\code{0} if absent).}
 }
 }
 \description{
-Reads a Hi-C contact matrix from a \code{.hic}, \code{.cool}, or \code{.h5} file,
-subsets to a specified genomic region, rebins to a desired resolution (merging or
-slicing as needed), and returns a complete grid of bin-pair interactions. For each
-bin-pair it computes:
+Reads a Hi-C contact matrix from a \code{.cool} or \code{.h5}
+(HDF5) file, subsets to a specified genomic region, rebins to a desired
+resolution (merging or slicing as needed), and returns a complete grid of
+bin-pair interactions. For each bin-pair it computes:
 \itemize{
-  \item GC content from a BSgenome
-  \item DNase-I accessibility (if provided, lifted over)
-  \item Transposable element (TE) overlap counts
-  \item Interaction counts
+\item GC content from a BSgenome
+\item DNase-I accessibility (if provided, lifted over)
+\item Transposable element (TE) overlap counts
+\item Interaction counts
 }
 }
 \examples{
-wig <- system.file("extdata", "DNaseI_BG3_gr_chr4.bedGraph", package = "HiCPotts")
-chain <- system.file("extdata", "dm3ToDm6_chr4_only.chain", package = "HiCPotts")
-te <- system.file("extdata", "dm6_TEs_chr4.gtf", package = "HiCPotts")
-hic <- system.file("extdata", "BG3_WT_merged_hic_matrix_chr4_100Kb.cool", package = "HiCPotts")
-
-bb <- get_data(
-  file_path      = hic,
-  chr            = "chr4",
-  start          = 1,
-  end            = 400000,
-  resolution     = 200000,
-  genome_package = "BSgenome.Dmelanogaster.UCSC.dm6",
-  acc_wig        = wig,
-  chain_file     = chain,
-  te_granges     = te
+## A 500 kb window of the bundled chr4 Hi-C matrix at 100 kb resolution.
+## GC, accessibility and TE columns stay NA unless the optional
+## annotation arguments are supplied.
+cool_file <- system.file(
+    "extdata", "BG3_WT_merged_hic_matrix_chr4_100Kb.cool",
+    package = "HiCPotts"
 )
-
+bins <- get_data(
+    file_path  = cool_file,
+    chr        = "chr4",
+    start      = 1,
+    end        = 500000,
+    resolution = 100000
+)
+head(bins)
 
 }
 \seealso{
-\code{\link[strawr]{straw}}, \code{\link[rhdf5]{h5read}}, \code{\link[rtracklayer]{liftOver}}
+\code{\link[rhdf5]{h5read}}, \code{\link[rtracklayer]{liftOver}}
 }
